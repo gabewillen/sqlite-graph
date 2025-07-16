@@ -1,0 +1,7 @@
+/home/gwillen/sqlite-graph/src/graph-advanced.c:676:29: error: function definition is not allowed here
+  676 |   int dfsVisit(int iNodeIdx){
+      |                             ^
+/home/gwillen/sqlite-graph/src/graph-advanced.c:707:18: error: call to undeclared function 'dfsVisit'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  707 |       hasCycle = dfsVisit(i);
+      |                  ^
+2 errors generated.

@@ -1,0 +1,66 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# Test executables (should not be in source tree)
+tests/test_cypher_basic
+tests/test_planner_compile
+tests/test_executor_compile
+tests/test_write_simple
+tests/test_merge_simple
+tests/test_write_comprehensive
+tests/test_transaction_complete
+tests/test_tck_basic
+
+# Coverage files
+*.gcda
+*.gcno
+*.gcov
+coverage.info
+coverage/
+coverage_report/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Compiled files
+*.o
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+*.exe
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+
+# Performance test results
+perf_results/
+*.db
+
+# Documentation build
+docs/_build/
+docs/html/
+
+# Python
+__pycache__/
+*.pyc
+
+# Temporary files
+*.tmp
+*.temp
+*.log

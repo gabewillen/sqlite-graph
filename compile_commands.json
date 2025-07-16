@@ -1,0 +1,1981 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-c",
+      "CMakeCCompilerId.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/CMakeFiles/3.28.3/CompilerIdC",
+    "file": "/home/gwillen/sqlite-graph/build/CMakeFiles/3.28.3/CompilerIdC/CMakeCCompilerId.c"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-v",
+      "-c",
+      "-o",
+      "CMakeFiles/cmTC_d4485.dir/CMakeCCompilerABI.c.o",
+      "/usr/share/cmake-3.28/Modules/CMakeCCompilerABI.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/CMakeFiles/CMakeScratch/TryCompile-9nIsf6",
+    "file": "/usr/share/cmake-3.28/Modules/CMakeCCompilerABI.c",
+    "output": "/home/gwillen/sqlite-graph/build/CMakeFiles/CMakeScratch/TryCompile-9nIsf6/CMakeFiles/cmTC_d4485.dir/CMakeCCompilerABI.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-Wno-implicit-fallthrough",
+      "-c",
+      "-o",
+      "CMakeFiles/sqlite3_lib.dir/_deps/sqlite3-src/sqlite3.c.o",
+      "/home/gwillen/sqlite-graph/build/_deps/sqlite3-src/sqlite3.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build",
+    "file": "/home/gwillen/sqlite-graph/build/_deps/sqlite3-src/sqlite3.c",
+    "output": "/home/gwillen/sqlite-graph/build/CMakeFiles/sqlite3_lib.dir/_deps/sqlite3-src/sqlite3.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph.c.o",
+      "/home/gwillen/sqlite-graph/src/graph.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph.c.o",
+      "/home/gwillen/sqlite-graph/src/graph.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-std=c11",
+      "-Waddress",
+      "-Waggregate-return",
+      "-Wformat-nonliteral",
+      "-Wformat-security",
+      "-Wformat",
+      "-Winit-self",
+      "-Wmissing-declarations",
+      "-Wmissing-include-dirs",
+      "-Wno-multichar",
+      "-Wno-parentheses",
+      "-Wno-type-limits",
+      "-Wno-unused-parameter",
+      "-Wunreachable-code",
+      "-Wwrite-strings",
+      "-Wpointer-arith",
+      "-Werror",
+      "-Wall",
+      "-c",
+      "-o",
+      "CMakeFiles/unity.dir/src/unity.c.o",
+      "/home/gwillen/sqlite-graph/build/_deps/unity-src/src/unity.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/_deps/unity-build",
+    "file": "/home/gwillen/sqlite-graph/build/_deps/unity-src/src/unity.c",
+    "output": "/home/gwillen/sqlite-graph/build/_deps/unity-build/CMakeFiles/unity.dir/src/unity.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-vtab.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-vtab.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-vtab.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-vtab.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-vtab.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-vtab.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-vtab.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-vtab.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-algo.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-algo.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-algo.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-algo.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-algo.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-algo.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-algo.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-algo.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-traverse.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-traverse.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-traverse.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-traverse.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-traverse.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-traverse.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-traverse.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-traverse.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-util.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-util.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-util.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-util.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-json.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-json.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-json.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-json.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-util.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-util.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-util.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-util.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-tvf.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-tvf.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-tvf.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-tvf.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-advanced.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-advanced.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-advanced.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-advanced.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-json.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-json.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-json.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-json.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-schema.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-schema.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-schema.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-schema.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-enhanced.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-enhanced.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-enhanced.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-enhanced.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-tvf.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-tvf.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-tvf.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-tvf.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-lexer.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-lexer.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-lexer.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-lexer.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-schema.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-schema.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-schema.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-schema.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-advanced.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-advanced.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-advanced.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-advanced.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-ast.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-ast.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-ast.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-ast.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-enhanced.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-enhanced.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-enhanced.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-enhanced.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-lexer.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-lexer.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-lexer.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-lexer.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-parser.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-parser.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-parser.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-parser.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-ast.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-ast.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-ast.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-ast.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-parser.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-parser.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-parser.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-parser.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-parser-generated.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-parser-generated.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-parser-generated.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-parser-generated.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-parser-generated.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-parser-generated.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-parser-generated.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-parser-generated.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-sql.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-sql.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-sql.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-sql.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-sql.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-sql.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-sql.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-sql.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-logical-plan.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-logical-plan.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-logical-plan.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-logical-plan.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-logical-plan.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-logical-plan.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-logical-plan.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-logical-plan.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-physical-plan.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-physical-plan.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-physical-plan.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-physical-plan.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-planner.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-planner.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-planner.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-planner.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-physical-plan.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-physical-plan.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-physical-plan.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-physical-plan.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-planner-sql.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-planner-sql.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-planner-sql.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-planner-sql.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-planner.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-planner.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-planner.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-planner.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-execution-context.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-execution-context.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-execution-context.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-execution-context.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-iterators.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-iterators.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-iterators.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-iterators.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-planner-sql.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-planner-sql.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-planner-sql.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-planner-sql.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-executor.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-executor.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-executor.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-executor.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-execution-context.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-execution-context.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-execution-context.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-execution-context.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-iterators.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-iterators.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-iterators.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-iterators.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-executor-sql.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-executor-sql.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-executor-sql.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-executor-sql.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-executor.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-executor.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-executor.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-executor.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-executor-sql.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-executor-sql.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-executor-sql.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-executor-sql.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-expressions.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-expressions.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-expressions.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-expressions.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-write.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-write.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-write.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-write.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-expressions.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-expressions.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-expressions.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-expressions.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-write-sql.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-write-sql.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-write-sql.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-write-sql.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-write.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-write.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-write.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-write.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-write-sql.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-write-sql.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-write-sql.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-write-sql.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-json.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-json.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-json.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-json.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-json.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-json.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-json.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-json.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/cypher/cypher-storage.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-storage.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-storage.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/cypher/cypher-storage.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-performance.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-performance.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-performance.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-performance.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-benchmark.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-benchmark.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-benchmark.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-benchmark.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/cypher/cypher-storage.c.o",
+      "/home/gwillen/sqlite-graph/src/cypher/cypher-storage.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/cypher/cypher-storage.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/cypher/cypher-storage.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-parallel.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-parallel.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-parallel.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-parallel.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-performance.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-performance.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-performance.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-performance.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-cache.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-cache.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-cache.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-cache.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-benchmark.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-benchmark.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-benchmark.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-benchmark.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-parallel.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-parallel.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-parallel.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-parallel.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-compress.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-compress.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-compress.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-compress.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-cache.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-cache.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-cache.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-cache.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-compress.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-compress.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-compress.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-compress.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-DSQLITE_CORE",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/graph_static.dir/graph-bulk.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-bulk.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-bulk.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph_static.dir/graph-bulk.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Dgraph_EXPORTS",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/graph.dir/graph-bulk.c.o",
+      "/home/gwillen/sqlite-graph/src/graph-bulk.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/src",
+    "file": "/home/gwillen/sqlite-graph/src/graph-bulk.c",
+    "output": "/home/gwillen/sqlite-graph/build/src/CMakeFiles/graph.dir/graph-bulk.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_main.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_main.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_main.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_main.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_extension_loading.dir/test_extension_loading.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_extension_loading.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_extension_loading.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_extension_loading.dir/test_extension_loading.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_main.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_main.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_main.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_main.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_virtual_table_comprehensive.dir/test_virtual_table_comprehensive.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_virtual_table_comprehensive.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_virtual_table_comprehensive.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_virtual_table_comprehensive.dir/test_virtual_table_comprehensive.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_storage.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_storage.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_storage.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_storage.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_storage.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_storage.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_storage.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_storage.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_extension_loading.dir/test_database_utils.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_database_utils.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_database_utils.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_extension_loading.dir/test_database_utils.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_virtual_table_comprehensive.dir/test_database_utils.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_database_utils.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_database_utils.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_virtual_table_comprehensive.dir/test_database_utils.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_algorithms.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_algorithms.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_algorithms.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_algorithms.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_algorithms.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_algorithms.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_algorithms.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_algorithms.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_traversal.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_traversal.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_traversal.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_traversal.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_traversal.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_traversal.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_traversal.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_traversal.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_virtual_table.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_virtual_table.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_virtual_table.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_virtual_table.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_cypher_basic.dir/test_cypher_basic.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_cypher_basic.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_cypher_basic.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_cypher_basic.dir/test_cypher_basic.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_virtual_table.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_virtual_table.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_virtual_table.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_virtual_table.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_planner_compile.dir/test_planner_compile.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_planner_compile.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_planner_compile.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_planner_compile.dir/test_planner_compile.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_integration.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_integration.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_integration.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_integration.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_integration.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_integration.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_integration.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_integration.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_performance.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_performance.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_performance.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_performance.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_performance.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_performance.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_performance.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_performance.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_advanced.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_advanced.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_advanced.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_advanced.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_advanced.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_advanced.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_advanced.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_advanced.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_executor_compile.dir/test_executor_compile.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_executor_compile.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_executor_compile.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_executor_compile.dir/test_executor_compile.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_schema.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_schema.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_schema.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_schema.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_write_simple.dir/test_write_simple.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_write_simple.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_write_simple.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_write_simple.dir/test_write_simple.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_schema.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_schema.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_schema.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_schema.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_cypher_parser.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_cypher_parser.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_cypher_parser.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_cypher_parser.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_cypher_parser.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_cypher_parser.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_cypher_parser.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_cypher_parser.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_cypher_planner.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_cypher_planner.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_cypher_planner.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_cypher_planner.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_merge_simple.dir/test_merge_simple.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_merge_simple.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_merge_simple.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_merge_simple.dir/test_merge_simple.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_cypher_planner.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_cypher_planner.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_cypher_planner.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_cypher_planner.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_write_comprehensive.dir/test_write_comprehensive.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_write_comprehensive.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_write_comprehensive.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_write_comprehensive.dir/test_write_comprehensive.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_cypher_executor.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_cypher_executor.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_cypher_executor.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_cypher_executor.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_cypher_executor.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_cypher_executor.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_cypher_executor.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_cypher_executor.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_performance_optimization.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_performance_optimization.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_performance_optimization.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_performance_optimization.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_transaction_complete.dir/test_transaction_complete.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_transaction_complete.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_transaction_complete.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_transaction_complete.dir/test_transaction_complete.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_performance_optimization.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_performance_optimization.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_performance_optimization.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_performance_optimization.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph.dir/test_performance_features.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_performance_features.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_performance_features.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph.dir/test_performance_features.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "-c",
+      "-o",
+      "CMakeFiles/test_tck_basic.dir/test_tck_basic.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_tck_basic.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_tck_basic.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_tck_basic.dir/test_tck_basic.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-I/home/gwillen/sqlite-graph/include",
+      "-I/home/gwillen/sqlite-graph/build/_deps/sqlite3-src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-src/src",
+      "-I/home/gwillen/sqlite-graph/build/_deps/unity-build",
+      "-Wno-long-long",
+      "-std=gnu99",
+      "--coverage",
+      "-c",
+      "-o",
+      "CMakeFiles/test_graph_coverage.dir/test_performance_features.c.o",
+      "/home/gwillen/sqlite-graph/tests/test_performance_features.c"
+    ],
+    "directory": "/home/gwillen/sqlite-graph/build/tests",
+    "file": "/home/gwillen/sqlite-graph/tests/test_performance_features.c",
+    "output": "/home/gwillen/sqlite-graph/build/tests/CMakeFiles/test_graph_coverage.dir/test_performance_features.c.o"
+  }
+]
