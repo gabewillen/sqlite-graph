@@ -26,15 +26,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 #include <string.h>
 #include <assert.h>
 
-/*
-** Helper function to extract a property value from a node's JSON properties.
-** Returns a malloc'd string that caller must free, or NULL if not found.
-*/
-static char *graphGetNodeProperty(GraphNode *pNode, const char *zProperty) {
-  // This function is deprecated as properties are now in the DB.
-  // It would require a DB lookup.
-  return NULL;
-}
+
 
 /*
 ** Base iterator functions.

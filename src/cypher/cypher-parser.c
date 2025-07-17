@@ -14,6 +14,11 @@
 * See the file LICENSE for more details.
 */
 
+#include "sqlite3ext.h"
+#ifndef SQLITE_CORE
+extern const sqlite3_api_routines *sqlite3_api;
+#endif
+
 #include "cypher/cypher-parser.h"
 #include "cypher/cypher-lexer.h"
 #include <stdio.h>
@@ -29,7 +34,7 @@ static CypherAst *parsePatternList(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parsePattern(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseNodePattern(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseNodeLabels(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseRelationshipPattern(CypherLexer *pLexer, CypherParser *pParser);
+/* static CypherAst *parseRelationshipPattern(CypherLexer *pLexer, CypherParser *pParser); */
 static CypherAst *parseWhereClause(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseReturnClause(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseProjectionList(CypherLexer *pLexer, CypherParser *pParser);
@@ -77,7 +82,7 @@ static CypherToken *parserConsumeToken(CypherLexer *pLexer, CypherTokenType expe
 }
 
 CypherParser *cypherParserCreate(void) {
-    CypherParser *pParser = (CypherParser *)malloc(sizeof(CypherParser));
+    CypherParser *pParser = (CypherParser *)sqlite3_malloc(sizeof(CypherParser));
     if (!pParser) {
         return NULL;
     }
@@ -92,14 +97,14 @@ void cypherParserDestroy(CypherParser *pParser) {
         cypherAstDestroy(pParser->pAst);
     }
     if (pParser->zErrorMsg) {
-        free(pParser->zErrorMsg);
+        sqlite3_free(pParser->zErrorMsg);
     }
-    free(pParser);
+    sqlite3_free(pParser);
 }
 
 static void parserSetError(CypherParser *pParser, CypherLexer *pLexer, const char *zFormat, ...) {
     if (pParser->zErrorMsg) {
-        free(pParser->zErrorMsg);
+        sqlite3_free(pParser->zErrorMsg);
     }
     
     va_list args;
@@ -118,7 +123,7 @@ static void parserSetError(CypherParser *pParser, CypherLexer *pLexer, const cha
         return;
     }
 
-    pParser->zErrorMsg = (char *)malloc(size + 256); // Add extra space for token info
+    pParser->zErrorMsg = (char *)sqlite3_malloc(size + 256); // Add extra space for token info
     if (!pParser->zErrorMsg) {
         va_end(args);
         // Allocation failed
@@ -282,6 +287,7 @@ static CypherAst *parseNodeLabels(CypherLexer *pLexer, CypherParser *pParser) {
     return cypherAstCreateNodeLabel(pLabel->text, pLabel->line, pLabel->column);
 }
 
+/* Currently unused - reserved for future relationship pattern parsing
 static CypherAst *parseRelationshipPattern(CypherLexer *pLexer, CypherParser *pParser) {
     CypherToken *pArrow = parserConsumeToken(pLexer, CYPHER_TOK_ARROW_RIGHT);
     if (!pArrow) {
@@ -313,6 +319,7 @@ static CypherAst *parseRelationshipPattern(CypherLexer *pLexer, CypherParser *pP
 
     return pRelPattern;
 }
+*/
 
 static CypherAst *parseWhereClause(CypherLexer *pLexer, CypherParser *pParser) {
     if (!parserConsumeToken(pLexer, CYPHER_TOK_WHERE)) {
@@ -541,6 +548,7 @@ static CypherAst *parsePropertyExpression(CypherLexer *pLexer, CypherParser *pPa
 }
 
 static CypherAst *parseLiteral(CypherLexer *pLexer, CypherParser *pParser) {
+    (void)pParser; /* Unused parameter */
     CypherToken *pToken = parserPeekToken(pLexer);
     if (pToken->type == CYPHER_TOK_IDENTIFIER || pToken->type == CYPHER_TOK_INTEGER || pToken->type == CYPHER_TOK_FLOAT || pToken->type == CYPHER_TOK_STRING || pToken->type == CYPHER_TOK_BOOLEAN || pToken->type == CYPHER_TOK_NULL) {
         pToken = cypherLexerNextToken(pLexer);

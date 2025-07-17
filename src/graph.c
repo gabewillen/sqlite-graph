@@ -34,7 +34,7 @@ GraphVtab *pGraph = 0;
 static sqlite3_mutex *pGraphMutex = 0;
 
 /* Thread-safe access to global pGraph */
-static GraphVtab *getGlobalGraph(void) {
+GraphVtab *getGlobalGraph(void) {
   GraphVtab *result = NULL;
   if (pGraphMutex) {
     sqlite3_mutex_enter(pGraphMutex);
@@ -44,7 +44,7 @@ static GraphVtab *getGlobalGraph(void) {
   return result;
 }
 
-static void setGlobalGraph(GraphVtab *pNewGraph) {
+void setGlobalGraph(GraphVtab *pNewGraph) {
   if (pGraphMutex) {
     sqlite3_mutex_enter(pGraphMutex);
     pGraph = pNewGraph;

@@ -530,4 +530,11 @@ int graphValidateRelationshipType(GraphVtab *pVtab, const char *zType);
 */
 int graphRebuildIndexes(GraphVtab *pVtab);
 
+/*
+** Thread-safe global graph access functions.
+** Used to manage the global graph variable in a thread-safe manner.
+*/
+void setGlobalGraph(GraphVtab *pNewGraph);
+GraphVtab *getGlobalGraph(void);
+
 #endif /* GRAPH_H */

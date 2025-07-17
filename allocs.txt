@@ -73,8 +73,9 @@ src/cypher/cypher-iterators.c:726:  pIterator = sqlite3_malloc(sizeof(CypherIter
 src/cypher/cypher-iterators.c:729:  pData = sqlite3_malloc(sizeof(SortIteratorData));
 src/cypher/cypher-iterators.c:815:  pIterator = sqlite3_malloc(sizeof(CypherIterator));
 src/cypher/cypher-iterators.c:818:  pData = sqlite3_malloc(sizeof(LimitIteratorData));
-src/cypher/cypher-ast.c:23:    CypherAst *pNode = (CypherAst *)malloc(sizeof(CypherAst));
-src/cypher/cypher-ast.c:61:        pParent->apChildren = (CypherAst **)realloc(pParent->apChildren, pParent->nChildrenAlloc * sizeof(CypherAst *));
+src/cypher/cypher-ast.c:19:  CypherAst *pAst = sqlite3_malloc(sizeof(CypherAst));
+src/cypher/cypher-ast.c:27:  pAst->apChildren = sqlite3_malloc(sizeof(CypherAst*) * pAst->nChildrenAlloc);
+src/cypher/cypher-ast.c:56:    CypherAst **apNew = sqlite3_realloc(pParent->apChildren, sizeof(CypherAst*) * nNewMax);
 src/cypher/cypher-json.c:12:** - Memory management using sqlite3_malloc/free
 src/cypher/cypher-json.c:15:** Memory allocation: All functions use sqlite3_malloc()/sqlite3_free()
 src/cypher/cypher-json.c:108:        zKey = sqlite3_malloc(keyLen + 1);
@@ -88,8 +89,8 @@ src/cypher/cypher-storage.c:16:** Memory allocation: All functions use sqlite3_m
 src/cypher/cypher-storage.c:65:        zLabelsJson = sqlite3_malloc(nAlloc);
 src/cypher/cypher-storage.c:80:                char *zNew = sqlite3_realloc(zLabelsJson, nAlloc);
 src/cypher/cypher-storage.c:496:    char *zResult = sqlite3_malloc(nAlloc);
-src/cypher/cypher-parser.c:79:    CypherParser *pParser = (CypherParser *)malloc(sizeof(CypherParser));
-src/cypher/cypher-parser.c:116:    pParser->zErrorMsg = (char *)malloc(size + 256); // Add extra space for token info
+src/cypher/cypher-parser.c:80:    CypherParser *pParser = (CypherParser *)malloc(sizeof(CypherParser));
+src/cypher/cypher-parser.c:121:    pParser->zErrorMsg = (char *)malloc(size + 256); // Add extra space for token info
 src/cypher/cypher-expressions.c:37:    pExpr = sqlite3_malloc(sizeof(CypherExpression));
 src/cypher/cypher-expressions.c:348:        aValues = sqlite3_malloc(sizeof(CypherValue) * nArgs);
 src/cypher/cypher-expressions.c:484:    zOutput = sqlite3_malloc(nLen + 1);
@@ -100,8 +101,8 @@ src/cypher/cypher-planner.c:46:  pPlanner->pContext = sqlite3_malloc(sizeof(Plan
 src/cypher/cypher-planner.c:119:    azNew = sqlite3_realloc(pContext->azVariables, nNew * sizeof(char*));
 src/cypher/cypher-planner.c:123:    apNew = sqlite3_realloc(pContext->apVarNodes, nNew * sizeof(LogicalPlanNode*));
 src/cypher/cypher-lexer.c:26:    CypherLexer *pLexer = (CypherLexer *)malloc(sizeof(CypherLexer));
-src/cypher/cypher-lexer.c:96:    CypherToken *pToken = (CypherToken *)malloc(sizeof(CypherToken));
-src/cypher/cypher-lexer.c:127:    pLexer->zErrorMsg = (char *)malloc(size + 1);
+src/cypher/cypher-lexer.c:100:    CypherToken *pToken = (CypherToken *)malloc(sizeof(CypherToken));
+src/cypher/cypher-lexer.c:135:    pLexer->zErrorMsg = (char *)malloc(size + 1);
 src/cypher/cypher-execution-context.c:14:** Memory allocation: All functions use sqlite3_malloc()/sqlite3_free()
 src/cypher/cypher-execution-context.c:35:  pContext = sqlite3_malloc(sizeof(ExecutionContext));
 src/cypher/cypher-execution-context.c:97:    azNew = sqlite3_realloc(pContext->azVariables, nNew * sizeof(char*));
@@ -204,15 +205,15 @@ src/graph-schema.c:253:  char **azCopy = sqlite3_malloc(sizeof(char*) * nLabels)
 src/graph-util.c:6:** memory management using sqlite3_malloc()/sqlite3_free().
 src/graph-util.c:25:  Queue *q = sqlite3_malloc(sizeof(Queue));
 src/graph-util.c:42:  QueueNode *p = sqlite3_malloc(sizeof(QueueNode));
-src/graph.c:62:** Memory allocation: Uses sqlite3_malloc() for any required structures.
-src/graph.c:465:  VisitedNode *vNode = sqlite3_malloc(sizeof(VisitedNode));
-src/graph.c:471:  sqlite3_int64 *pPredecessor = sqlite3_malloc(sizeof(sqlite3_int64) * (nNodes + 1));
-src/graph.c:497:        vNode = sqlite3_malloc(sizeof(VisitedNode));
-src/graph.c:594:  double *pRank = sqlite3_malloc(sizeof(double) * (nNodes + 1));
-src/graph.c:595:  double *pNextRank = sqlite3_malloc(sizeof(double) * (nNodes + 1));
-src/graph.c:596:  int *pOutDegree = sqlite3_malloc(sizeof(int) * (nNodes + 1));
-src/graph.c:1009:    pNode = sqlite3_malloc(sizeof(GraphNode));
-src/graph.c:1033:    pEdge = sqlite3_malloc(sizeof(GraphEdge));
+src/graph.c:82:** Memory allocation: Uses sqlite3_malloc() for any required structures.
+src/graph.c:495:  VisitedNode *vNode = sqlite3_malloc(sizeof(VisitedNode));
+src/graph.c:501:  sqlite3_int64 *pPredecessor = sqlite3_malloc(sizeof(sqlite3_int64) * (nNodes + 1));
+src/graph.c:527:        vNode = sqlite3_malloc(sizeof(VisitedNode));
+src/graph.c:624:  double *pRank = sqlite3_malloc(sizeof(double) * (nNodes + 1));
+src/graph.c:625:  double *pNextRank = sqlite3_malloc(sizeof(double) * (nNodes + 1));
+src/graph.c:626:  int *pOutDegree = sqlite3_malloc(sizeof(int) * (nNodes + 1));
+src/graph.c:1039:    pNode = sqlite3_malloc(sizeof(GraphNode));
+src/graph.c:1063:    pEdge = sqlite3_malloc(sizeof(GraphEdge));
 src/graph-bulk.c:52:    CSVParser *parser = sqlite3_malloc(sizeof(CSVParser));
 src/graph-bulk.c:55:    parser->buffer = sqlite3_malloc(size + 1);
 src/graph-bulk.c:95:    parser->headers = sqlite3_malloc(nCols * sizeof(char*));
