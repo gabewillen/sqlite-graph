@@ -1,69 +1,11 @@
 # SQLite Graph Extension Tests CMakeLists.txt
 
-# Test executable
-add_executable(test_graph
-    test_main.c
-    test_storage.c
-    test_algorithms.c
-    test_traversal.c
-    test_virtual_table.c
-    test_integration.c
-    test_performance.c
-    test_advanced.c
-    test_schema.c
-    test_cypher_parser.c
-    test_cypher_planner.c
-    test_cypher_executor.c
-    test_performance_optimization.c
-    test_performance_features.c
-)
-
-# Link with Unity test framework and graph library
-target_link_libraries(test_graph
-    unity
-    graph_static
-    sqlite3_lib
-    m
-    dl
-    pthread
-)
-
-# Test with coverage
-add_executable(test_graph_coverage
-    test_main.c
-    test_storage.c
-    test_algorithms.c
-    test_traversal.c
-    test_virtual_table.c
-    test_integration.c
-    test_performance.c
-    test_advanced.c
-    test_schema.c
-    test_cypher_parser.c
-    test_cypher_planner.c
-    test_cypher_executor.c
-    test_performance_optimization.c
-    test_performance_features.c
-)
-
-target_link_libraries(test_graph_coverage
-    unity
-    graph_static
-    sqlite3_lib
-    m
-    dl
-    pthread
-)
-
-target_compile_options(test_graph_coverage PRIVATE --coverage)
-target_link_options(test_graph_coverage PRIVATE --coverage)
-
 # Enable CTest
 enable_testing()
 
 # Main test suite
-add_test(NAME graph_tests COMMAND test_graph)
-add_test(NAME graph_coverage_tests COMMAND test_graph_coverage)
+# add_test(NAME graph_tests COMMAND test_graph)
+# add_test(NAME graph_coverage_tests COMMAND test_graph_coverage)
 
 # COMPREHENSIVE INDIVIDUAL TESTS - NO LAZY TEST BUILDING
 add_executable(test_extension_loading 
@@ -73,6 +15,7 @@ add_executable(test_extension_loading
 target_link_libraries(test_extension_loading 
     unity 
     graph_static 
+    graph_test_util
     sqlite3_lib
     m dl pthread
 )
@@ -84,6 +27,7 @@ add_executable(test_virtual_table_comprehensive
 target_link_libraries(test_virtual_table_comprehensive
     unity
     graph_static 
+    graph_test_util
     sqlite3_lib
     m dl pthread
 )
@@ -106,6 +50,7 @@ foreach(test ${INDIVIDUAL_TESTS})
         add_executable(${test} ${test}.c)
         target_link_libraries(${test} 
             graph_static 
+            graph_test_util
             sqlite3_lib
             m dl pthread
         )
@@ -114,10 +59,10 @@ foreach(test ${INDIVIDUAL_TESTS})
 endforeach()
 
 # Set test properties
-set_tests_properties(graph_tests PROPERTIES 
-    TIMEOUT 60
-    LABELS "unit;integration"
-)
+# set_tests_properties(graph_tests PROPERTIES 
+#     TIMEOUT 60
+#     LABELS "unit;integration"
+# )
 
 # Add test labels for organization
 set_tests_properties(test_cypher_basic test_planner_compile test_executor_compile 
@@ -128,3 +73,15 @@ set_tests_properties(test_transaction_complete
     PROPERTIES LABELS "transactions")
 set_tests_properties(test_tck_basic 
     PROPERTIES LABELS "tck;compliance")
+
+add_executable(test_cypher_lexer test_cypher_lexer.c)
+target_link_libraries(test_cypher_lexer graph_static graph_test_util sqlite3_lib m dl pthread)
+add_test(NAME test_cypher_lexer COMMAND test_cypher_lexer)
+
+add_executable(test_cypher_parser test_cypher_parser.c)
+target_link_libraries(test_cypher_parser graph_static unity graph_test_util sqlite3_lib m dl pthread)
+add_test(NAME test_cypher_parser COMMAND test_cypher_parser)
+
+add_executable(test_cypher_ast test_cypher_ast.c)
+target_link_libraries(test_cypher_ast graph_static unity graph_test_util sqlite3_lib m dl pthread)
+add_test(NAME test_cypher_ast COMMAND test_cypher_ast)

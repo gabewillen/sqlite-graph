@@ -15,9 +15,7 @@
 #include "cypher.h"
 #include "cypher-executor.h"
 #include "cypher-write.h"
-
-/* Declare graphExtensionLoad since we don't have graph-extension.h */
-int graphExtensionLoad(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
+#include "test_util.h" // Include common test utilities
 
 /* Test counters */
 static int tests_run = 0;

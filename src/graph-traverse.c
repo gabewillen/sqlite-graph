@@ -15,6 +15,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 #endif
 /* SQLITE_EXTENSION_INIT1 - removed to prevent multiple definition */
 #include "graph.h"
+#include "graph-util.h"
 #include <assert.h>
 
 /*
@@ -34,10 +35,7 @@ static int graphDFSRecursive(GraphVtab *pVtab, sqlite3_int64 iNodeId,
                             int nMaxDepth, int nCurrentDepth,
                             GraphVisitedSet *pVisited, char **pzPath);
 
-/*
-** Queue structure for BFS implementation.
-** Dynamic array with head/tail pointers for efficient FIFO operations.
-*/
+
 
 
 /*

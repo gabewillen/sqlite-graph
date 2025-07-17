@@ -11,8 +11,8 @@
 #define SQLITE_CORE
 #include "unity.h"
 #include "sqlite3.h"
-#include "../include/graph.h"
-#include "../include/graph-vtab.h"
+#include "graph.h"
+#include "graph-vtab.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -532,3 +532,31 @@ int add_test_graph_data(sqlite3* db, const char* table_name) {
 
 /* REMINDER: NO LAZY UTILITY IMPLEMENTATIONS - EVERY FUNCTION MUST BE COMPLETE */
 /* ALL DATABASE OPERATIONS MUST HAVE PROPER ERROR HANDLING AND VERIFICATION */
+
+/*
+** Main test runner for database utilities
+** REMINDER: NO LAZY TEST MAIN - RUN ALL UTILITY TESTS
+*/
+void runDatabaseUtilsTests(void) {
+    sqlite3 *db = NULL;
+    int rc;
+    
+    /* Test database creation */
+    db = create_test_database();
+    TEST_ASSERT_NOT_NULL(db);
+    
+    /* Test extension loading */
+    rc = load_graph_extension(db);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    /* Test graph table creation */
+    rc = create_test_graph_table(db, "my_test_graph");
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    /* Test adding data */
+    rc = add_test_graph_data(db, "my_test_graph");
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    /* Test cleanup */
+    cleanup_test_database(db);
+}

@@ -1,89 +1,29 @@
-#include "cypher.h"
+/*
+* Copyright 2018-2024 Redis Labs Ltd. and Contributors
+*
+* This file is available under the Redis Source Available License 2.0,
+* applying the same terms and conditions as the Redis Source Available License 2.0.
+* You may not use this file except in compliance with the Redis Source Available License 2.0.
+*
+* A copy of the Redis Source Available License 2.0 is available at
+* https://redis.io/rsal/Redis-Source-Available-License-2.0/
+*
+* The Redis Source Available License 2.0 is a copy-left license that requires any
+* derivative work to be made available under the same terms and conditions.
+* 
+* See the file LICENSE for more details.
+*/
+
+#include "cypher/cypher-parser.h"
+#include "cypher/cypher-lexer.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdarg.h>
 
-// Helper function to allocate memory and handle errors
-static void *cypher_malloc(size_t size) {
-    void *ptr = sqlite3_malloc(size);
-    if (!ptr) {
-        fprintf(stderr, "Memory allocation failed.\n");
-        exit(EXIT_FAILURE);
-    }
-    return ptr;
-}
-
-// Helper function to free memory
-static void cypher_free(void *ptr) {
-    sqlite3_free(ptr);
-}
-
-// Parser Functions
-CypherParser *cypherParserCreate(void) {
-    CypherParser *pParser = cypher_malloc(sizeof(CypherParser));
-    pParser->zError = NULL;
-    return pParser;
-}
-
-void cypherParserDestroy(CypherParser *pParser) {
-    if (pParser) {
-        if (pParser->zError) {
-            cypher_free(pParser->zError);
-        }
-        cypher_free(pParser);
-    }
-}
-
-static void parserSetError(CypherParser *pParser, CypherLexer *pLexer, const char *zFormat, ...) {
-    va_list args;
-    va_start(args, zFormat);
-    // Determine size needed
-    int size = vsnprintf(NULL, 0, zFormat, args);
-    va_end(args);
-
-    pParser->zError = cypher_malloc(size + 1);
-    va_start(args, zFormat);
-    vsnprintf(pParser->zError, size + 1, zFormat, args);
-    va_end(args);
-
-    // Also set lexer error to stop further tokenization
-    if (pLexer->zErrorMsg) {
-        cypher_free(pLexer->zErrorMsg);
-    }
-    pLexer->zErrorMsg = cypher_malloc(size + 1);
-    strcpy(pLexer->zErrorMsg, pParser->zError);
-}
-
-static CypherToken *parserPeekToken(CypherLexer *pLexer) {
-    // The lexer's pLastToken is the last token returned, so we need to get the next one
-    // This is a simplification; a real parser would have a lookahead buffer
-    // For now, we'll just call nextToken and store it.
-    if (!pLexer->pLastToken || pLexer->pLastToken->type == CYPHER_TOK_EOF) {
-        pLexer->pLastToken = cypherLexerNextToken(pLexer);
-    }
-    return pLexer->pLastToken;
-}
-
-static CypherToken *parserConsumeToken(CypherLexer *pLexer, CypherTokenType expectedType, CypherParser *pParser) {
-    CypherToken *token = cypherLexerNextToken(pLexer);
-    if (token == NULL) { // Lexer error
-        parserSetError(pParser, pLexer, "Lexer error: %s", pLexer->zErrorMsg);
-        return NULL;
-    }
-    if (token->type != expectedType) {
-        parserSetError(pParser, pLexer, "Expected token %s but got %s at line %d, column %d",
-                       cypherTokenTypeName(expectedType), cypherTokenTypeName(token->type), token->iLine, token->iColumn);
-        return NULL;
-    }
-    return token;
-}
-
-// Recursive Descent Parsing Functions (forward declarations)
+// Forward declarations for recursive descent parsing functions
 static CypherAst *parseQuery(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseSingleQuery(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseReadingClauseList(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseReadingClause(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseMatchClause(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parsePatternList(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parsePattern(CypherLexer *pLexer, CypherParser *pParser);
@@ -94,450 +34,335 @@ static CypherAst *parseWhereClause(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseReturnClause(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseProjectionList(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseProjectionItem(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseOrderByClause(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseSortList(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseSortItem(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseLimitClause(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseSkipClause(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseExpression(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseOrExpression(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseAndExpression(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseEqualityExpression(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parseRelationalExpression(CypherLexer *pLexer, CypherParser *pParser);
+static CypherAst *parseNotExpression(CypherLexer *pLexer, CypherParser *pParser);
+static CypherAst *parseComparisonExpression(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseAdditiveExpression(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseMultiplicativeExpression(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseUnaryExpression(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parsePrimaryExpression(CypherLexer *pLexer, CypherParser *pParser);
-static CypherAst *parsePropertyExpression(CypherLexer *pLexer, CypherParser *pParser);
+static CypherAst *parsePropertyExpression(CypherLexer *pLexer, CypherParser *pParser, CypherAst *pExpr);
 static CypherAst *parseLiteral(CypherLexer *pLexer, CypherParser *pParser);
 
-// Implementations of parsing functions
 
-static CypherAst *parseQuery(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *queryAst = cypherAstCreate(CYPHER_AST_QUERY, pLexer->iLine, pLexer->iColumn);
-    if (!queryAst) return NULL;
 
-    CypherAst *singleQuery = parseSingleQuery(pLexer, pParser);
-    if (!singleQuery) {
-        cypherAstDestroy(queryAst);
+
+
+
+
+
+static CypherToken *parserPeekToken(CypherLexer *pLexer) {
+    // This is a bit of a hack, as the lexer doesn't have a peek function.
+    // We can achieve the same effect by getting the next token and then
+    // rewinding the lexer's position.
+    int pos = pLexer->iPos;
+    int line = pLexer->iLine;
+    int col = pLexer->iColumn;
+    CypherToken *token = cypherLexerNextToken(pLexer);
+    pLexer->iPos = pos;
+    pLexer->iLine = line;
+    pLexer->iColumn = col;
+    return token;
+}
+
+static CypherToken *parserConsumeToken(CypherLexer *pLexer, CypherTokenType expectedType) {
+    CypherToken *token = cypherLexerNextToken(pLexer);
+    printf("Consumed token: type=%d, text='%.*s', line=%d, column=%d\n", token->type, token->len, token->text, token->line, token->column);
+    if (token->type != expectedType) {
         return NULL;
     }
-    cypherAstAddChild(queryAst, singleQuery);
+    return token;
+}
 
-    // Handle UNION
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_UNION) {
-        parserConsumeToken(pLexer, CYPHER_TOK_UNION, pParser); // Consume UNION
-        if (pParser->zError) { cypherAstDestroy(queryAst); return NULL; }
+CypherParser *cypherParserCreate(void) {
+    CypherParser *pParser = (CypherParser *)malloc(sizeof(CypherParser));
+    if (!pParser) {
+        return NULL;
+    }
+    
+    pParser->pAst = NULL;
+    pParser->zErrorMsg = NULL;
+    return pParser;
+}
 
-        CypherAst *nextSingleQuery = parseSingleQuery(pLexer, pParser);
-        if (!nextSingleQuery) {
-            cypherAstDestroy(queryAst);
-            return NULL;
-        }
-        // If we have multiple UNIONs, we need to wrap them in a UNION AST node
-        if (queryAst->type != CYPHER_AST_UNION) {
-            CypherAst *unionAst = cypherAstCreate(CYPHER_AST_UNION, queryAst->iLine, queryAst->iColumn);
-            if (!unionAst) { cypherAstDestroy(queryAst); return NULL; }
-            cypherAstAddChild(unionAst, queryAst);
-            queryAst = unionAst;
-        }
-        cypherAstAddChild(queryAst, nextSingleQuery);
+void cypherParserDestroy(CypherParser *pParser) {
+    if (pParser->pAst) {
+        cypherAstDestroy(pParser->pAst);
+    }
+    if (pParser->zErrorMsg) {
+        free(pParser->zErrorMsg);
+    }
+    free(pParser);
+}
+
+static void parserSetError(CypherParser *pParser, CypherLexer *pLexer, const char *zFormat, ...) {
+    if (pParser->zErrorMsg) {
+        free(pParser->zErrorMsg);
+    }
+    
+    va_list args;
+    va_start(args, zFormat);
+    
+    // Determine required size
+    va_list args_copy;
+    va_copy(args_copy, args);
+    int size = vsnprintf(NULL, 0, zFormat, args_copy);
+    va_end(args_copy);
+
+    if (size < 0) {
+        va_end(args);
+        // Encoding error
+        pParser->zErrorMsg = NULL;
+        return;
     }
 
-    return queryAst;
+    pParser->zErrorMsg = (char *)malloc(size + 256); // Add extra space for token info
+    if (!pParser->zErrorMsg) {
+        va_end(args);
+        // Allocation failed
+        return;
+    }
+
+    vsnprintf(pParser->zErrorMsg, size + 1, zFormat, args);
+    va_end(args);
+
+    // Append token information
+    if (pLexer && pLexer->pLastToken) {
+        sprintf(pParser->zErrorMsg + size, " near '%.*s' at line %d column %d", 
+                pLexer->pLastToken->len, pLexer->pLastToken->text, 
+                pLexer->pLastToken->line, pLexer->pLastToken->column);
+    }
+}
+
+CypherAst *cypherParse(CypherParser *pParser, const char *zQuery, char **pzErrMsg) {
+    CypherLexer *pLexer = cypherLexerCreate(zQuery);
+    if (!pLexer) {
+        if (pzErrMsg) *pzErrMsg = strdup("Failed to create lexer");
+        return NULL;
+    }
+
+    pParser->pAst = parseQuery(pLexer, pParser);
+
+    if (pParser->zErrorMsg) {
+        if (pzErrMsg) *pzErrMsg = strdup(pParser->zErrorMsg);
+    }
+
+    cypherLexerDestroy(pLexer);
+    return pParser->pAst;
+}
+
+static CypherAst *parseQuery(CypherLexer *pLexer, CypherParser *pParser) {
+    CypherAst *pQuery = cypherAstCreate(CYPHER_AST_QUERY, 0, 0);
+    CypherAst *pSingleQuery = parseSingleQuery(pLexer, pParser);
+    if (!pSingleQuery) {
+        cypherAstDestroy(pQuery);
+        return NULL;
+    }
+    cypherAstAddChild(pQuery, pSingleQuery);
+    return pQuery;
 }
 
 static CypherAst *parseSingleQuery(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *singleQueryAst = cypherAstCreate(CYPHER_AST_SINGLE_QUERY, pLexer->iLine, pLexer->iColumn);
-    if (!singleQueryAst) return NULL;
-
-    CypherAst *readingClauses = parseReadingClauseList(pLexer, pParser);
-    if (!readingClauses) { cypherAstDestroy(singleQueryAst); return NULL; }
-    cypherAstAddChild(singleQueryAst, readingClauses);
-
-    CypherAst *returnClause = parseReturnClause(pLexer, pParser);
-    if (!returnClause) { cypherAstDestroy(singleQueryAst); return NULL; }
-    cypherAstAddChild(singleQueryAst, returnClause);
-
-    // Optional clauses
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_ORDER) {
-        CypherAst *orderByClause = parseOrderByClause(pLexer, pParser);
-        if (!orderByClause) { cypherAstDestroy(singleQueryAst); return NULL; }
-        cypherAstAddChild(singleQueryAst, orderByClause);
-    }
-
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_LIMIT) {
-        CypherAst *limitClause = parseLimitClause(pLexer, pParser);
-        if (!limitClause) { cypherAstDestroy(singleQueryAst); return NULL; }
-        cypherAstAddChild(singleQueryAst, limitClause);
-    }
-
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_SKIP) {
-        CypherAst *skipClause = parseSkipClause(pLexer, pParser);
-        if (!skipClause) { cypherAstDestroy(singleQueryAst); return NULL; }
-        cypherAstAddChild(singleQueryAst, skipClause);
-    }
-
-    return singleQueryAst;
-}
-
-static CypherAst *parseReadingClauseList(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *list = NULL;
-    CypherAst *clause = NULL;
-
-    while (1) {
-        CypherTokenType nextType = parserPeekToken(pLexer)->type;
-        if (nextType == CYPHER_TOK_MATCH || nextType == CYPHER_TOK_OPTIONAL || nextType == CYPHER_TOK_WHERE) {
-            clause = parseReadingClause(pLexer, pParser);
-            if (!clause) { cypherAstDestroy(list); return NULL; }
-            if (!list) {
-                list = clause;
-            } else {
-                cypherAstAddChild(list, clause);
-            }
-        } else {
-            break;
-        }
-    }
-    return list;
-}
-
-static CypherAst *parseReadingClause(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherTokenType nextType = parserPeekToken(pLexer)->type;
-    if (nextType == CYPHER_TOK_MATCH || nextType == CYPHER_TOK_OPTIONAL) {
-        return parseMatchClause(pLexer, pParser);
-    } else if (nextType == CYPHER_TOK_WHERE) {
-        return parseWhereClause(pLexer, pParser);
-    } else {
-        parserSetError(pParser, pLexer, "Expected a reading clause (MATCH, OPTIONAL MATCH, WHERE) but got %s at line %d, column %d",
-                       cypherTokenTypeName(nextType), pLexer->iLine, pLexer->iColumn);
+    CypherAst *pSingleQuery = cypherAstCreate(CYPHER_AST_SINGLE_QUERY, 0, 0);
+    CypherAst *pMatchClause = parseMatchClause(pLexer, pParser);
+    if (!pMatchClause) {
+        cypherAstDestroy(pSingleQuery);
         return NULL;
     }
+    cypherAstAddChild(pSingleQuery, pMatchClause);
+
+    CypherToken *pPeek = parserPeekToken(pLexer);
+    if (pPeek->type == CYPHER_TOK_WHERE) {
+        CypherAst *pWhereClause = parseWhereClause(pLexer, pParser);
+        if (pWhereClause) {
+            cypherAstAddChild(pSingleQuery, pWhereClause);
+        }
+    }
+
+    pPeek = parserPeekToken(pLexer);
+    if (pPeek->type == CYPHER_TOK_RETURN) {
+        CypherAst *pReturnClause = parseReturnClause(pLexer, pParser);
+        if (!pReturnClause) {
+            cypherAstDestroy(pSingleQuery);
+            return NULL;
+        }
+        cypherAstAddChild(pSingleQuery, pReturnClause);
+    }
+
+    // Consume tokens until EOF
+    CypherToken *token;
+    do {
+        token = cypherLexerNextToken(pLexer);
+    } while (token->type != CYPHER_TOK_EOF && token->type != CYPHER_TOK_ERROR);
+
+    if (token->type == CYPHER_TOK_ERROR) {
+        parserSetError(pParser, pLexer, "Syntax error");
+        cypherAstDestroy(pSingleQuery);
+        return NULL;
+    }
+
+    return pSingleQuery;
 }
 
 static CypherAst *parseMatchClause(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserPeekToken(pLexer);
-    CypherAstNodeType astType = CYPHER_AST_MATCH;
-
-    if (token->type == CYPHER_TOK_OPTIONAL) {
-        parserConsumeToken(pLexer, CYPHER_TOK_OPTIONAL, pParser);
-        if (pParser->zError) return NULL;
-        astType = CYPHER_AST_OPTIONAL_MATCH;
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_MATCH)) {
+        parserSetError(pParser, pLexer, "Expected MATCH");
+        return NULL;
     }
-
-    token = parserConsumeToken(pLexer, CYPHER_TOK_MATCH, pParser);
-    if (pParser->zError) return NULL;
-
-    CypherAst *matchAst = cypherAstCreate(astType, token->iLine, token->iColumn);
-    if (!matchAst) return NULL;
-
-    CypherAst *patternList = parsePatternList(pLexer, pParser);
-    if (!patternList) { cypherAstDestroy(matchAst); return NULL; }
-    cypherAstAddChild(matchAst, patternList);
-
-    return matchAst;
+    CypherAst *pMatchClause = cypherAstCreate(CYPHER_AST_MATCH, 0, 0);
+    CypherAst *pPatternList = parsePatternList(pLexer, pParser);
+    if (!pPatternList) {
+        cypherAstDestroy(pMatchClause);
+        return NULL;
+    }
+    cypherAstAddChild(pMatchClause, pPatternList);
+    return pMatchClause;
 }
 
 static CypherAst *parsePatternList(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *list = NULL;
-    CypherAst *pattern = NULL;
-
-    pattern = parsePattern(pLexer, pParser);
-    if (!pattern) return NULL;
-    list = pattern;
-
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_COMMA) {
-        parserConsumeToken(pLexer, CYPHER_TOK_COMMA, pParser);
-        if (pParser->zError) { cypherAstDestroy(list); return NULL; }
-
-        pattern = parsePattern(pLexer, pParser);
-        if (!pattern) { cypherAstDestroy(list); return NULL; }
-        cypherAstAddChild(list, pattern);
+    CypherAst *pPatternList = cypherAstCreate(CYPHER_AST_PATTERN, 0, 0);
+    CypherAst *pPattern = parsePattern(pLexer, pParser);
+    if (!pPattern) {
+        cypherAstDestroy(pPatternList);
+        return NULL;
     }
-    return list;
+    cypherAstAddChild(pPatternList, pPattern);
+    return pPatternList;
 }
 
 static CypherAst *parsePattern(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *nodePattern1 = parseNodePattern(pLexer, pParser);
-    if (!nodePattern1) return NULL;
-
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_DASH || parserPeekToken(pLexer)->type == CYPHER_TOK_ARROW_LEFT) {
-        CypherAst *relPattern = parseRelationshipPattern(pLexer, pParser);
-        if (!relPattern) { cypherAstDestroy(nodePattern1); return NULL; }
-
-        CypherAst *nodePattern2 = parseNodePattern(pLexer, pParser);
-        if (!nodePattern2) { cypherAstDestroy(nodePattern1); cypherAstDestroy(relPattern); return NULL; }
-
-        CypherAst *pathAst = cypherAstCreate(CYPHER_AST_PATH, nodePattern1->iLine, nodePattern1->iColumn);
-        if (!pathAst) { cypherAstDestroy(nodePattern1); cypherAstDestroy(relPattern); cypherAstDestroy(nodePattern2); return NULL; }
-        cypherAstAddChild(pathAst, nodePattern1);
-        cypherAstAddChild(pathAst, relPattern);
-        cypherAstAddChild(pathAst, nodePattern2);
-        return pathAst;
-    } else {
-        return nodePattern1;
+    CypherAst *pPattern = cypherAstCreate(CYPHER_AST_PATTERN, 0, 0);
+    CypherAst *pNodePattern = parseNodePattern(pLexer, pParser);
+    if (!pNodePattern) {
+        cypherAstDestroy(pPattern);
+        return NULL;
     }
+    cypherAstAddChild(pPattern, pNodePattern);
+    return pPattern;
 }
 
 static CypherAst *parseNodePattern(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserConsumeToken(pLexer, CYPHER_TOK_LPAREN, pParser);
-    if (pParser->zError) return NULL;
-
-    CypherAst *nodePatternAst = cypherAstCreate(CYPHER_AST_NODE_PATTERN, token->iLine, token->iColumn);
-    if (!nodePatternAst) return NULL;
-
-    CypherToken *idToken = parserPeekToken(pLexer);
-    if (idToken->type == CYPHER_TOK_IDENTIFIER) {
-        token = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER, pParser);
-        if (pParser->zError) { cypherAstDestroy(nodePatternAst); return NULL; }
-        cypherAstAddChild(nodePatternAst, cypherAstCreateIdentifier(token->zValue, token->iLine, token->iColumn));
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_LPAREN)) {
+        parserSetError(pParser, pLexer, "Expected (");
+        return NULL;
+    }
+    CypherAst *pNodePattern = cypherAstCreate(CYPHER_AST_NODE_PATTERN, 0, 0);
+    CypherToken *pId = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER);
+    if (pId) {
+        cypherAstAddChild(pNodePattern, cypherAstCreateIdentifier(pId->text, pId->line, pId->column));
     }
 
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_COLON) {
-        CypherAst *nodeLabels = parseNodeLabels(pLexer, pParser);
-        if (!nodeLabels) { cypherAstDestroy(nodePatternAst); return NULL; }
-        cypherAstAddChild(nodePatternAst, nodeLabels);
+    CypherAst *pLabels = parseNodeLabels(pLexer, pParser);
+    if (pLabels) {
+        cypherAstAddChild(pNodePattern, pLabels);
     }
 
-    token = parserConsumeToken(pLexer, CYPHER_TOK_RPAREN, pParser);
-    if (pParser->zError) { cypherAstDestroy(nodePatternAst); return NULL; }
-
-    return nodePatternAst;
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_RPAREN)) {
+        parserSetError(pParser, pLexer, "Expected )");
+        cypherAstDestroy(pNodePattern);
+        return NULL;
+    }
+    return pNodePattern;
 }
 
 static CypherAst *parseNodeLabels(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *labelsAst = cypherAstCreate(CYPHER_AST_LABELS, pLexer->iLine, pLexer->iColumn);
-    if (!labelsAst) return NULL;
-
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_COLON) {
-        parserConsumeToken(pLexer, CYPHER_TOK_COLON, pParser);
-        if (pParser->zError) { cypherAstDestroy(labelsAst); return NULL; }
-
-        CypherToken *idToken = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER, pParser);
-        if (pParser->zError) { cypherAstDestroy(labelsAst); return NULL; }
-        cypherAstAddChild(labelsAst, cypherAstCreateIdentifier(idToken->zValue, idToken->iLine, idToken->iColumn));
+    CypherToken *pColon = parserPeekToken(pLexer);
+    if (pColon->type != CYPHER_TOK_COLON) {
+        return NULL;
     }
-    return labelsAst;
+    parserConsumeToken(pLexer, CYPHER_TOK_COLON);
+
+    CypherToken *pLabel = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER);
+    if (!pLabel) {
+        parserSetError(pParser, pLexer, "Expected node label after ':'");
+        return NULL;
+    }
+    return cypherAstCreateNodeLabel(pLabel->text, pLabel->line, pLabel->column);
 }
 
 static CypherAst *parseRelationshipPattern(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserPeekToken(pLexer);
-    CypherAst *relAst = NULL;
-
-    // Handle left arrow if present
-    if (token->type == CYPHER_TOK_ARROW_LEFT) {
-        token = parserConsumeToken(pLexer, CYPHER_TOK_ARROW_LEFT, pParser);
-        if (pParser->zError) return NULL;
-        relAst = cypherAstCreate(CYPHER_AST_REL_PATTERN, token->iLine, token->iColumn);
-        if (!relAst) return NULL;
-        cypherAstSetValue(relAst, "<-");
+    CypherToken *pArrow = parserConsumeToken(pLexer, CYPHER_TOK_ARROW_RIGHT);
+    if (!pArrow) {
+        pArrow = parserConsumeToken(pLexer, CYPHER_TOK_ARROW_LEFT);
+    }
+    if (!pArrow) {
+        return NULL;
     }
 
-    token = parserConsumeToken(pLexer, CYPHER_TOK_DASH, pParser);
-    if (pParser->zError) { cypherAstDestroy(relAst); return NULL; }
-    if (!relAst) { // If no left arrow, create it now
-        relAst = cypherAstCreate(CYPHER_AST_REL_PATTERN, token->iLine, token->iColumn);
-        if (!relAst) return NULL;
-        cypherAstSetValue(relAst, "--");
+    CypherAst *pRelPattern = cypherAstCreate(CYPHER_AST_REL_PATTERN, pArrow->line, pArrow->column);
+    cypherAstSetValue(pRelPattern, pArrow->text);
+
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_LBRACKET)) {
+        parserSetError(pParser, pLexer, "Expected [");
+        cypherAstDestroy(pRelPattern);
+        return NULL;
     }
 
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_LBRACKET) {
-        parserConsumeToken(pLexer, CYPHER_TOK_LBRACKET, pParser);
-        if (pParser->zError) { cypherAstDestroy(relAst); return NULL; }
-
-        CypherToken *idToken = parserPeekToken(pLexer);
-        if (idToken->type == CYPHER_TOK_IDENTIFIER) {
-            token = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER, pParser);
-            if (pParser->zError) { cypherAstDestroy(relAst); return NULL; }
-            cypherAstAddChild(relAst, cypherAstCreateIdentifier(token->zValue, token->iLine, token->iColumn));
-        }
-
-        if (parserPeekToken(pLexer)->type == CYPHER_TOK_COLON) {
-            parserConsumeToken(pLexer, CYPHER_TOK_COLON, pParser);
-            if (pParser->zError) { cypherAstDestroy(relAst); return NULL; }
-
-            CypherToken *typeToken = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER, pParser);
-            if (pParser->zError) { cypherAstDestroy(relAst); return NULL; }
-            cypherAstAddChild(relAst, cypherAstCreateIdentifier(typeToken->zValue, typeToken->iLine, typeToken->iColumn));
-        }
-
-        parserConsumeToken(pLexer, CYPHER_TOK_RBRACKET, pParser);
-        if (pParser->zError) { cypherAstDestroy(relAst); return NULL; }
+    CypherToken *pId = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER);
+    if (pId) {
+        cypherAstAddChild(pRelPattern, cypherAstCreateIdentifier(pId->text, pId->line, pId->column));
     }
 
-    // Handle right arrow if present
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_ARROW_RIGHT) {
-        token = parserConsumeToken(pLexer, CYPHER_TOK_ARROW_RIGHT, pParser);
-        if (pParser->zError) { cypherAstDestroy(relAst); return NULL; }
-        if (strcmp(cypherAstGetValue(relAst), "<-") == 0) {
-            cypherAstSetValue(relAst, "<-"); // Should be <->
-        } else {
-            cypherAstSetValue(relAst, "->");
-        }
-    } else if (strcmp(cypherAstGetValue(relAst), "<-") == 0) {
-        // If it was only a left arrow, keep it as such
-    } else {
-        // If no arrows, it's just a dash
-        cypherAstSetValue(relAst, "--");
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_RBRACKET)) {
+        parserSetError(pParser, pLexer, "Expected ]");
+        cypherAstDestroy(pRelPattern);
+        return NULL;
     }
 
-    return relAst;
+    return pRelPattern;
 }
 
 static CypherAst *parseWhereClause(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserConsumeToken(pLexer, CYPHER_TOK_WHERE, pParser);
-    if (pParser->zError) return NULL;
-
-    CypherAst *whereAst = cypherAstCreate(CYPHER_AST_WHERE, token->iLine, token->iColumn);
-    if (!whereAst) return NULL;
-
-    CypherAst *expression = parseExpression(pLexer, pParser);
-    if (!expression) { cypherAstDestroy(whereAst); return NULL; }
-    cypherAstAddChild(whereAst, expression);
-
-    return whereAst;
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_WHERE)) {
+        return NULL;
+    }
+    CypherAst *pWhereClause = cypherAstCreate(CYPHER_AST_WHERE, 0, 0);
+    CypherAst *pExpr = parseExpression(pLexer, pParser);
+    if (!pExpr) {
+        cypherAstDestroy(pWhereClause);
+        return NULL;
+    }
+    cypherAstAddChild(pWhereClause, pExpr);
+    return pWhereClause;
 }
 
 static CypherAst *parseReturnClause(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserConsumeToken(pLexer, CYPHER_TOK_RETURN, pParser);
-    if (pParser->zError) return NULL;
-
-    CypherAst *returnAst = cypherAstCreate(CYPHER_AST_RETURN, token->iLine, token->iColumn);
-    if (!returnAst) return NULL;
-
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_DISTINCT) {
-        parserConsumeToken(pLexer, CYPHER_TOK_DISTINCT, pParser);
-        if (pParser->zError) { cypherAstDestroy(returnAst); return NULL; }
-        returnAst->iFlags |= 1; // Set DISTINCT flag
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_RETURN)) {
+        parserSetError(pParser, pLexer, "Expected RETURN");
+        return NULL;
     }
-
-    CypherAst *projectionList = parseProjectionList(pLexer, pParser);
-    if (!projectionList) { cypherAstDestroy(returnAst); return NULL; }
-    cypherAstAddChild(returnAst, projectionList);
-
-    return returnAst;
+    CypherAst *pReturnClause = cypherAstCreate(CYPHER_AST_RETURN, 0, 0);
+    CypherAst *pProjectionList = parseProjectionList(pLexer, pParser);
+    if (!pProjectionList) {
+        cypherAstDestroy(pReturnClause);
+        return NULL;
+    }
+    cypherAstAddChild(pReturnClause, pProjectionList);
+    return pReturnClause;
 }
 
 static CypherAst *parseProjectionList(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *list = cypherAstCreate(CYPHER_AST_PROJECTION_LIST, pLexer->iLine, pLexer->iColumn);
-    if (!list) return NULL;
-
-    CypherAst *item = parseProjectionItem(pLexer, pParser);
-    if (!item) { cypherAstDestroy(list); return NULL; }
-    cypherAstAddChild(list, item);
-
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_COMMA) {
-        parserConsumeToken(pLexer, CYPHER_TOK_COMMA, pParser);
-        if (pParser->zError) { cypherAstDestroy(list); return NULL; }
-
-        item = parseProjectionItem(pLexer, pParser);
-        if (!item) { cypherAstDestroy(list); return NULL; }
-        cypherAstAddChild(list, item);
+    CypherAst *pProjectionList = cypherAstCreate(CYPHER_AST_PROJECTION_LIST, 0, 0);
+    CypherAst *pProjectionItem = parseProjectionItem(pLexer, pParser);
+    if (!pProjectionItem) {
+        cypherAstDestroy(pProjectionList);
+        return NULL;
     }
-    return list;
+    cypherAstAddChild(pProjectionList, pProjectionItem);
+    return pProjectionList;
 }
 
 static CypherAst *parseProjectionItem(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *expression = parseExpression(pLexer, pParser);
-    if (!expression) return NULL;
-
-    CypherAst *itemAst = cypherAstCreate(CYPHER_AST_PROJECTION_ITEM, expression->iLine, expression->iColumn);
-    if (!itemAst) { cypherAstDestroy(expression); return NULL; }
-    cypherAstAddChild(itemAst, expression);
-
-    if (parserPeekToken(pLexer)->type == CYPHER_TOK_AS) {
-        parserConsumeToken(pLexer, CYPHER_TOK_AS, pParser);
-        if (pParser->zError) { cypherAstDestroy(itemAst); return NULL; }
-
-        CypherToken *idToken = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER, pParser);
-        if (pParser->zError) { cypherAstDestroy(itemAst); return NULL; }
-        cypherAstAddChild(itemAst, cypherAstCreateIdentifier(idToken->zValue, idToken->iLine, idToken->iColumn));
+    CypherAst *pProjectionItem = cypherAstCreate(CYPHER_AST_PROJECTION_ITEM, 0, 0);
+    CypherAst *pExpr = parseExpression(pLexer, pParser);
+    if (!pExpr) {
+        cypherAstDestroy(pProjectionItem);
+        return NULL;
     }
-    return itemAst;
-}
-
-static CypherAst *parseOrderByClause(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserConsumeToken(pLexer, CYPHER_TOK_ORDER, pParser);
-    if (pParser->zError) return NULL;
-    token = parserConsumeToken(pLexer, CYPHER_TOK_BY, pParser);
-    if (pParser->zError) return NULL;
-
-    CypherAst *orderByAst = cypherAstCreate(CYPHER_AST_ORDER_BY, token->iLine, token->iColumn);
-    if (!orderByAst) return NULL;
-
-    CypherAst *sortList = parseSortList(pLexer, pParser);
-    if (!sortList) { cypherAstDestroy(orderByAst); return NULL; }
-    cypherAstAddChild(orderByAst, sortList);
-
-    return orderByAst;
-}
-
-static CypherAst *parseSortList(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *list = cypherAstCreate(CYPHER_AST_SORT_LIST, pLexer->iLine, pLexer->iColumn);
-    if (!list) return NULL;
-
-    CypherAst *item = parseSortItem(pLexer, pParser);
-    if (!item) { cypherAstDestroy(list); return NULL; }
-    cypherAstAddChild(list, item);
-
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_COMMA) {
-        parserConsumeToken(pLexer, CYPHER_TOK_COMMA, pParser);
-        if (pParser->zError) { cypherAstDestroy(list); return NULL; }
-
-        item = parseSortItem(pLexer, pParser);
-        if (!item) { cypherAstDestroy(list); return NULL; }
-        cypherAstAddChild(list, item);
-    }
-    return list;
-}
-
-static CypherAst *parseSortItem(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *expression = parseExpression(pLexer, pParser);
-    if (!expression) return NULL;
-
-    CypherAst *sortItemAst = cypherAstCreate(CYPHER_AST_SORT_ITEM, expression->iLine, expression->iColumn);
-    if (!sortItemAst) { cypherAstDestroy(expression); return NULL; }
-    cypherAstAddChild(sortItemAst, expression);
-
-    CypherTokenType nextType = parserPeekToken(pLexer)->type;
-    if (nextType == CYPHER_TOK_ASC) {
-        parserConsumeToken(pLexer, CYPHER_TOK_ASC, pParser);
-        if (pParser->zError) { cypherAstDestroy(sortItemAst); return NULL; }
-        cypherAstSetValue(sortItemAst, "ASC");
-    } else if (nextType == CYPHER_TOK_DESC) {
-        parserConsumeToken(pLexer, CYPHER_TOK_DESC, pParser);
-        if (pParser->zError) { cypherAstDestroy(sortItemAst); return NULL; }
-        cypherAstSetValue(sortItemAst, "DESC");
-    }
-    return sortItemAst;
-}
-
-static CypherAst *parseLimitClause(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserConsumeToken(pLexer, CYPHER_TOK_LIMIT, pParser);
-    if (pParser->zError) return NULL;
-
-    CypherAst *limitAst = cypherAstCreate(CYPHER_AST_LIMIT, token->iLine, token->iColumn);
-    if (!limitAst) return NULL;
-
-    CypherToken *intToken = parserConsumeToken(pLexer, CYPHER_TOK_INTEGER, pParser);
-    if (pParser->zError) { cypherAstDestroy(limitAst); return NULL; }
-    cypherAstAddChild(limitAst, cypherAstCreateLiteral(intToken->zValue, intToken->iLine, intToken->iColumn));
-
-    return limitAst;
-}
-
-static CypherAst *parseSkipClause(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserConsumeToken(pLexer, CYPHER_TOK_SKIP, pParser);
-    if (pParser->zError) return NULL;
-
-    CypherAst *skipAst = cypherAstCreate(CYPHER_AST_SKIP, token->iLine, token->iColumn);
-    if (!skipAst) return NULL;
-
-    CypherToken *intToken = parserConsumeToken(pLexer, CYPHER_TOK_INTEGER, pParser);
-    if (pParser->zError) { cypherAstDestroy(skipAst); return NULL; }
-    cypherAstAddChild(skipAst, cypherAstCreateLiteral(intToken->zValue, intToken->iLine, intToken->iColumn));
-
-    return skipAst;
+    cypherAstAddChild(pProjectionItem, pExpr);
+    return pProjectionItem;
 }
 
 static CypherAst *parseExpression(CypherLexer *pLexer, CypherParser *pParser) {
@@ -545,252 +370,181 @@ static CypherAst *parseExpression(CypherLexer *pLexer, CypherParser *pParser) {
 }
 
 static CypherAst *parseOrExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *left = parseAndExpression(pLexer, pParser);
-    if (!left) return NULL;
+    CypherAst *pLeft = parseAndExpression(pLexer, pParser);
+    if (!pLeft) return NULL;
 
     while (parserPeekToken(pLexer)->type == CYPHER_TOK_OR) {
-        CypherToken *opToken = parserConsumeToken(pLexer, CYPHER_TOK_OR, pParser);
-        if (pParser->zError) { cypherAstDestroy(left); return NULL; }
-
-        CypherAst *right = parseAndExpression(pLexer, pParser);
-        if (!right) { cypherAstDestroy(left); return NULL; }
-
-        left = cypherAstCreateBinaryOp(opToken->zValue, left, right, opToken->iLine, opToken->iColumn);
-        if (!left) { cypherAstDestroy(right); return NULL; }
+        parserConsumeToken(pLexer, CYPHER_TOK_OR);
+        CypherAst *pRight = parseAndExpression(pLexer, pParser);
+        if (!pRight) {
+            cypherAstDestroy(pLeft);
+            parserSetError(pParser, pLexer, "Expected expression after OR");
+            return NULL;
+        }
+        CypherAst *pOrExpr = cypherAstCreateBinaryOp("OR", pLeft, pRight, 0, 0);
+        cypherAstAddChild(pOrExpr, pLeft);
+        cypherAstAddChild(pOrExpr, pRight);
+        pLeft = pOrExpr;
     }
-    return left;
+    return pLeft;
 }
 
 static CypherAst *parseAndExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *left = parseEqualityExpression(pLexer, pParser);
-    if (!left) return NULL;
+    CypherAst *pLeft = parseNotExpression(pLexer, pParser);
+    if (!pLeft) return NULL;
 
     while (parserPeekToken(pLexer)->type == CYPHER_TOK_AND) {
-        CypherToken *opToken = parserConsumeToken(pLexer, CYPHER_TOK_AND, pParser);
-        if (pParser->zError) { cypherAstDestroy(left); return NULL; }
-
-        CypherAst *right = parseEqualityExpression(pLexer, pParser);
-        if (!right) { cypherAstDestroy(left); return NULL; }
-
-        left = cypherAstCreateBinaryOp(opToken->zValue, left, right, opToken->iLine, opToken->iColumn);
-        if (!left) { cypherAstDestroy(right); return NULL; }
+        parserConsumeToken(pLexer, CYPHER_TOK_AND);
+        CypherAst *pRight = parseNotExpression(pLexer, pParser);
+        if (!pRight) {
+            cypherAstDestroy(pLeft);
+            parserSetError(pParser, pLexer, "Expected expression after AND");
+            return NULL;
+        }
+        CypherAst *pAndExpr = cypherAstCreate(CYPHER_AST_AND, 0, 0);
+        cypherAstAddChild(pAndExpr, pLeft);
+        cypherAstAddChild(pAndExpr, pRight);
+        pLeft = pAndExpr;
     }
-    return left;
+    return pLeft;
 }
 
-static CypherAst *parseEqualityExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *left = parseRelationalExpression(pLexer, pParser);
-    if (!left) return NULL;
-
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_EQ || parserPeekToken(pLexer)->type == CYPHER_TOK_NE) {
-        CypherToken *opToken = cypherLexerNextToken(pLexer);
-        if (pParser->zError) { cypherAstDestroy(left); return NULL; }
-
-        CypherAst *right = parseRelationalExpression(pLexer, pParser);
-        if (!right) { cypherAstDestroy(left); return NULL; }
-
-        left = cypherAstCreateBinaryOp(opToken->zValue, left, right, opToken->iLine, opToken->iColumn);
-        if (!left) { cypherAstDestroy(right); return NULL; }
+static CypherAst *parseNotExpression(CypherLexer *pLexer, CypherParser *pParser) {
+    CypherToken *pToken = parserPeekToken(pLexer);
+    if (pToken->type == CYPHER_TOK_NOT) {
+        parserConsumeToken(pLexer, CYPHER_TOK_NOT);
+        CypherAst *pExpr = parseNotExpression(pLexer, pParser);
+        if (!pExpr) {
+            parserSetError(pParser, pLexer, "Expected expression after NOT");
+            return NULL;
+        }
+        CypherAst *pNotExpr = cypherAstCreate(CYPHER_AST_NOT, 0, 0);
+        cypherAstAddChild(pNotExpr, pExpr);
+        return pNotExpr;
     }
-    return left;
+    return parseComparisonExpression(pLexer, pParser);
 }
 
-static CypherAst *parseRelationalExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *left = parseAdditiveExpression(pLexer, pParser);
-    if (!left) return NULL;
+static CypherAst *parseComparisonExpression(CypherLexer *pLexer, CypherParser *pParser) {
+    CypherAst *pLeft = parseAdditiveExpression(pLexer, pParser);
+    if (!pLeft) return NULL;
 
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_LT ||
-           parserPeekToken(pLexer)->type == CYPHER_TOK_LE ||
-           parserPeekToken(pLexer)->type == CYPHER_TOK_GT ||
-           parserPeekToken(pLexer)->type == CYPHER_TOK_GE) {
-        CypherToken *opToken = cypherLexerNextToken(pLexer);
-        if (pParser->zError) { cypherAstDestroy(left); return NULL; }
-
-        CypherAst *right = parseAdditiveExpression(pLexer, pParser);
-        if (!right) { cypherAstDestroy(left); return NULL; }
-
-        left = cypherAstCreateBinaryOp(opToken->zValue, left, right, opToken->iLine, opToken->iColumn);
-        if (!left) { cypherAstDestroy(right); return NULL; }
+    CypherToken *pToken = parserPeekToken(pLexer);
+    while (           pToken->type == CYPHER_TOK_EQ || pToken->type == CYPHER_TOK_NE ||
+           pToken->type == CYPHER_TOK_LT || pToken->type == CYPHER_TOK_LE ||
+           pToken->type == CYPHER_TOK_GT || pToken->type == CYPHER_TOK_GE) {
+        parserConsumeToken(pLexer, pToken->type);
+        CypherAst *pRight = parseAdditiveExpression(pLexer, pParser);
+        if (!pRight) {
+            cypherAstDestroy(pLeft);
+            parserSetError(pParser, pLexer, "Expected expression after comparison operator");
+            return NULL;
+        }
+        CypherAst *pCompExpr = cypherAstCreate(CYPHER_AST_COMPARISON, 0, 0);
+        cypherAstSetValue(pCompExpr, pToken->text);
+        cypherAstAddChild(pCompExpr, pLeft);
+        cypherAstAddChild(pCompExpr, pRight);
+        pLeft = pCompExpr;
+        pToken = parserPeekToken(pLexer);
     }
-    return left;
+    return pLeft;
 }
 
 static CypherAst *parseAdditiveExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *left = parseMultiplicativeExpression(pLexer, pParser);
-    if (!left) return NULL;
+    CypherAst *pLeft = parseMultiplicativeExpression(pLexer, pParser);
+    if (!pLeft) return NULL;
 
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_PLUS || parserPeekToken(pLexer)->type == CYPHER_TOK_MINUS) {
-        CypherToken *opToken = cypherLexerNextToken(pLexer);
-        if (pParser->zError) { cypherAstDestroy(left); return NULL; }
-
-        CypherAst *right = parseMultiplicativeExpression(pLexer, pParser);
-        if (!right) { cypherAstDestroy(left); return NULL; }
-
-        left = cypherAstCreateBinaryOp(opToken->zValue, left, right, opToken->iLine, opToken->iColumn);
-        if (!left) { cypherAstDestroy(right); return NULL; }
+    CypherToken *pToken = parserPeekToken(pLexer);
+    while (pToken->type == CYPHER_TOK_PLUS || pToken->type == CYPHER_TOK_MINUS) {
+        parserConsumeToken(pLexer, pToken->type);
+        CypherAst *pRight = parseMultiplicativeExpression(pLexer, pParser);
+        if (!pRight) {
+            cypherAstDestroy(pLeft);
+            parserSetError(pParser, pLexer, "Expected expression after additive operator");
+            return NULL;
+        }
+        CypherAst *pAddExpr = cypherAstCreate(CYPHER_AST_ADDITIVE, 0, 0);
+        cypherAstSetValue(pAddExpr, pToken->text);
+        cypherAstAddChild(pAddExpr, pLeft);
+        cypherAstAddChild(pAddExpr, pRight);
+        pLeft = pAddExpr;
+        pToken = parserPeekToken(pLexer);
     }
-    return left;
+    return pLeft;
 }
 
 static CypherAst *parseMultiplicativeExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherAst *left = parseUnaryExpression(pLexer, pParser);
-    if (!left) return NULL;
+    CypherAst *pLeft = parseUnaryExpression(pLexer, pParser);
+    if (!pLeft) return NULL;
 
-    while (parserPeekToken(pLexer)->type == CYPHER_TOK_MULT ||
-           parserPeekToken(pLexer)->type == CYPHER_TOK_DIV ||
-           parserPeekToken(pLexer)->type == CYPHER_TOK_MOD ||
-           parserPeekToken(pLexer)->type == CYPHER_TOK_POW) {
-        CypherToken *opToken = cypherLexerNextToken(pLexer);
-        if (pParser->zError) { cypherAstDestroy(left); return NULL; }
-
-        CypherAst *right = parseUnaryExpression(pLexer, pParser);
-        if (!right) { cypherAstDestroy(left); return NULL; }
-
-        left = cypherAstCreateBinaryOp(opToken->zValue, left, right, opToken->iLine, opToken->iColumn);
-        if (!left) { cypherAstDestroy(right); return NULL; }
+    CypherToken *pToken = parserPeekToken(pLexer);
+    while (pToken->type == CYPHER_TOK_MULT || pToken->type == CYPHER_TOK_DIV || pToken->type == CYPHER_TOK_MOD) {
+        parserConsumeToken(pLexer, pToken->type);
+        CypherAst *pRight = parseUnaryExpression(pLexer, pParser);
+        if (!pRight) {
+            cypherAstDestroy(pLeft);
+            parserSetError(pParser, pLexer, "Expected expression after multiplicative operator");
+            return NULL;
+        }
+        CypherAst *pMulExpr = cypherAstCreate(CYPHER_AST_MULTIPLICATIVE, 0, 0);
+        cypherAstSetValue(pMulExpr, pToken->text);
+        cypherAstAddChild(pMulExpr, pLeft);
+        cypherAstAddChild(pMulExpr, pRight);
+        pLeft = pMulExpr;
+        pToken = parserPeekToken(pLexer);
     }
-    return left;
+    return pLeft;
 }
 
 static CypherAst *parseUnaryExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherTokenType nextType = parserPeekToken(pLexer)->type;
-    if (nextType == CYPHER_TOK_NOT || nextType == CYPHER_TOK_MINUS) {
-        CypherToken *opToken = cypherLexerNextToken(pLexer);
-        if (pParser->zError) return NULL;
-
-        CypherAst *operand = parsePrimaryExpression(pLexer, pParser);
-        if (!operand) return NULL;
-
-        CypherAst *unaryAst = cypherAstCreate(CYPHER_AST_UNARY_OP, opToken->iLine, opToken->iColumn);
-        if (!unaryAst) { cypherAstDestroy(operand); return NULL; }
-        cypherAstSetValue(unaryAst, opToken->zValue);
-        cypherAstAddChild(unaryAst, operand);
-        return unaryAst;
-    } else {
-        return parsePrimaryExpression(pLexer, pParser);
+    CypherToken *pToken = parserPeekToken(pLexer);
+    if (pToken->type == CYPHER_TOK_PLUS || pToken->type == CYPHER_TOK_MINUS) {
+        parserConsumeToken(pLexer, pToken->type);
+        CypherAst *pExpr = parseUnaryExpression(pLexer, pParser);
+        if (!pExpr) {
+            parserSetError(pParser, pLexer, "Expected expression after unary operator");
+            return NULL;
+        }
+        CypherAst *pUnaryExpr = cypherAstCreateUnaryOp(pToken->text, pExpr, 0, 0);
+        cypherAstSetValue(pUnaryExpr, pToken->text);
+        cypherAstAddChild(pUnaryExpr, pExpr);
+        return pUnaryExpr;
     }
+    return parsePrimaryExpression(pLexer, pParser);
 }
 
 static CypherAst *parsePrimaryExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = parserPeekToken(pLexer);
-    CypherAst *ast = NULL;
-
-    switch (token->type) {
-        case CYPHER_TOK_INTEGER:
-        case CYPHER_TOK_FLOAT:
-        case CYPHER_TOK_STRING:
-        case CYPHER_TOK_BOOLEAN:
-        case CYPHER_TOK_NULL:
-            ast = parseLiteral(pLexer, pParser);
-            break;
-        case CYPHER_TOK_IDENTIFIER:
-            // Could be identifier or property access
-            token = cypherLexerNextToken(pLexer);
-            if (pParser->zError) return NULL;
-            ast = cypherAstCreateIdentifier(token->zValue, token->iLine, token->iColumn);
-            if (parserPeekToken(pLexer)->type == CYPHER_TOK_DOT) {
-                // It's a property expression
-                CypherAst *propAst = parsePropertyExpression(pLexer, pParser);
-                if (!propAst) { cypherAstDestroy(ast); return NULL; }
-                // The property expression parser expects to create the identifier itself.
-                // So, we need to replace the current `ast` with the `propAst`.
-                // This is a bit of a hack due to the recursive descent structure.
-                // A better approach would be to pass the already parsed identifier to parsePropertyExpression.
-                // For now, we'll just return the propAst and rely on its internal creation.
-                return propAst;
-            }
-            break;
-        case CYPHER_TOK_LPAREN:
-            parserConsumeToken(pLexer, CYPHER_TOK_LPAREN, pParser);
-            if (pParser->zError) return NULL;
-            ast = parseExpression(pLexer, pParser);
-            if (!ast) return NULL;
-            parserConsumeToken(pLexer, CYPHER_TOK_RPAREN, pParser);
-            if (pParser->zError) { cypherAstDestroy(ast); return NULL; }
-            break;
-        default:
-            parserSetError(pParser, pLexer, "Unexpected token %s in primary expression at line %d, column %d",
-                           cypherTokenTypeName(token->type), token->iLine, token->iColumn);
-            return NULL;
+    CypherAst *pExpr = parseLiteral(pLexer, pParser);
+    if (pExpr) {
+        return parsePropertyExpression(pLexer, pParser, pExpr);
     }
-    return ast;
+    return NULL;
 }
 
-static CypherAst *parsePropertyExpression(CypherLexer *pLexer, CypherParser *pParser) {
-    // This function is called after an IDENTIFIER has been consumed and a DOT is peeked.
-    // The initial IDENTIFIER is already part of the AST passed as pObj.
-    // We need to re-parse the identifier as the object, then consume the dot and the property name.
-    // This is a bit tricky with the current peek/consume model, might need adjustment.
-    // For simplicity, let's assume the previous IDENTIFIER is already handled and we just need to get the property.
-
-    // Re-get the identifier that was already consumed as the object
-    CypherToken *objToken = pLexer->pLastToken; // This is a hack, needs proper lookahead buffer
-    if (!objToken || objToken->type != CYPHER_TOK_IDENTIFIER) {
-        parserSetError(pParser, pLexer, "Internal parser error: Expected identifier for property access");
-        return NULL;
+static CypherAst *parsePropertyExpression(CypherLexer *pLexer, CypherParser *pParser, CypherAst *pExpr) {
+    CypherToken *pToken = parserPeekToken(pLexer);
+    while (pToken->type == CYPHER_TOK_DOT) {
+        parserConsumeToken(pLexer, CYPHER_TOK_DOT);
+        CypherToken *pProperty = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER);
+        if (!pProperty) {
+            cypherAstDestroy(pExpr);
+            parserSetError(pParser, pLexer, "Expected property name after '.'");
+            return NULL;
+        }
+        CypherAst *pPropExpr = cypherAstCreate(CYPHER_AST_PROPERTY, 0, 0);
+        cypherAstAddChild(pPropExpr, pExpr);
+        cypherAstAddChild(pPropExpr, cypherAstCreateIdentifier(pProperty->text, pProperty->line, pProperty->column));
+        pExpr = pPropExpr;
+        pToken = parserPeekToken(pLexer);
     }
-    CypherAst *pObj = cypherAstCreateIdentifier(objToken->zValue, objToken->iLine, objToken->iColumn);
-    if (!pObj) return NULL;
-
-    parserConsumeToken(pLexer, CYPHER_TOK_DOT, pParser);
-    if (pParser->zError) { cypherAstDestroy(pObj); return NULL; }
-
-    CypherToken *propToken = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER, pParser);
-    if (pParser->zError) { cypherAstDestroy(pObj); return NULL; }
-
-    CypherAst *propAst = cypherAstCreateProperty(pObj, propToken->zValue, propToken->iLine, propToken->iColumn);
-    if (!propAst) { cypherAstDestroy(pObj); return NULL; }
-    return propAst;
+    return pExpr;
 }
 
 static CypherAst *parseLiteral(CypherLexer *pLexer, CypherParser *pParser) {
-    CypherToken *token = cypherLexerNextToken(pLexer);
-    if (token == NULL) { // Lexer error
-        parserSetError(pParser, pLexer, "Lexer error: %s", pLexer->zErrorMsg);
-        return NULL;
+    CypherToken *pToken = parserPeekToken(pLexer);
+    if (pToken->type == CYPHER_TOK_IDENTIFIER || pToken->type == CYPHER_TOK_INTEGER || pToken->type == CYPHER_TOK_FLOAT || pToken->type == CYPHER_TOK_STRING || pToken->type == CYPHER_TOK_BOOLEAN || pToken->type == CYPHER_TOK_NULL) {
+        pToken = cypherLexerNextToken(pLexer);
+        return cypherAstCreateLiteral(pToken->text, pToken->line, pToken->column);
     }
-    switch (token->type) {
-        case CYPHER_TOK_INTEGER:
-        case CYPHER_TOK_FLOAT:
-        case CYPHER_TOK_STRING:
-        case CYPHER_TOK_BOOLEAN:
-        case CYPHER_TOK_NULL:
-            return cypherAstCreateLiteral(token->zValue, token->iLine, token->iColumn);
-        default:
-            parserSetError(pParser, pLexer, "Expected a literal but got %s at line %d, column %d",
-                           cypherTokenTypeName(token->type), token->iLine, token->iColumn);
-            return NULL;
-    }
-}
-
-// Main parsing entry point
-CypherAst *cypherParse(CypherParser *pParser, const char *zQuery, char **pzErrMsg) {
-    CypherLexer *pLexer = cypherLexerCreate(zQuery);
-    if (!pLexer) {
-        if (pzErrMsg) *pzErrMsg = cypher_malloc(strlen("Failed to create lexer") + 1); strcpy(*pzErrMsg, "Failed to create lexer");
-        return NULL;
-    }
-
-    // Prime the lexer with the first token
-    pLexer->pLastToken = cypherLexerNextToken(pLexer);
-    if (pLexer->zErrorMsg) {
-        if (pzErrMsg) *pzErrMsg = pLexer->zErrorMsg; // Transfer ownership
-        pLexer->zErrorMsg = NULL; // Prevent double free
-        cypherLexerDestroy(pLexer);
-        return NULL;
-    }
-
-    CypherAst *pAst = parseQuery(pLexer, pParser);
-
-    if (pParser->zError) {
-        if (pzErrMsg) {
-            *pzErrMsg = pParser->zError; // Transfer ownership
-            pParser->zError = NULL; // Prevent double free
-        }
-        cypherAstDestroy(pAst); // Clean up partially built AST
-        pAst = NULL;
-    }
-
-    cypherLexerDestroy(pLexer);
-    return pAst;
+    return NULL;
 }

@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <math.h>
 #include <float.h>
-#include "../build/_deps/sqlite3-src/sqlite3.h"
+#include "sqlite3.h"
 
 /* Test database utils - NO LAZY UTILS */
 sqlite3* create_test_database(void) {

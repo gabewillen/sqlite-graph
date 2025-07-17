@@ -19,6 +19,8 @@
 #define CYPHER_PLANNER_H
 
 #include "cypher.h"
+#include "graph-vtab.h"
+
 
 /*
 ** Logical plan node types representing different query operations.

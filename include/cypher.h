@@ -181,6 +181,7 @@ void cypherAstSetValue(CypherAst *pNode, const char *zValue);
 CypherAst *cypherAstGetChild(CypherAst *pNode, int iChild);
 int cypherAstGetChildCount(CypherAst *pNode);
 const char *cypherAstGetValue(CypherAst *pNode);
+int cypherAstIsType(CypherAst *pAst, CypherAstNodeType type);
 
 // AST Node destruction
 void cypherAstDestroy(CypherAst *pNode);

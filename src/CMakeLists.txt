@@ -20,10 +20,7 @@ add_library(graph SHARED
   cypher/cypher-ast.c
   cypher/cypher-lexer.c
   cypher/cypher-parser.c
-  cypher/cypher-parser-generated.c
 )
-
-set_source_files_properties(cypher/cypher-parser-generated.c PROPERTIES COMPILE_OPTIONS "-Wno-unused-parameter;-Wno-unused-variable")
 
 # Include SQLite headers
 target_include_directories(graph PRIVATE ${sqlite3_SOURCE_DIR})
@@ -37,7 +34,6 @@ add_library(graph_static STATIC
     graph-vtab.c
     graph-algo.c
     graph-traverse.c
-    graph-util.c
     graph-json.c
     graph-tvf.c
     graph-advanced.c
@@ -46,16 +42,11 @@ add_library(graph_static STATIC
     cypher/cypher-lexer.c
     cypher/cypher-ast.c
     cypher/cypher-parser.c
-    cypher/cypher-parser-generated.c
-    cypher/cypher-sql.c
     cypher/cypher-logical-plan.c
     cypher/cypher-physical-plan.c
     cypher/cypher-planner.c
-    cypher/cypher-planner-sql.c
     cypher/cypher-execution-context.c
     cypher/cypher-iterators.c
-    cypher/cypher-executor.c
-    cypher/cypher-executor-sql.c
     cypher/cypher-expressions.c
     cypher/cypher-write.c
     cypher/cypher-write-sql.c
@@ -69,8 +60,15 @@ add_library(graph_static STATIC
     graph-bulk.c
 )
 
+add_library(graph_test_util STATIC
+    graph-util.c
+)
+target_compile_definitions(graph_test_util PRIVATE SQLITE_CORE)
+
+
+
 # Include SQLite headers
-target_include_directories(graph_static PRIVATE ${sqlite3_SOURCE_DIR})
+target_include_directories(graph_static PRIVATE ${sqlite3_SOURCE_DIR} ${unity_SOURCE_DIR}/src)
 
 # Define SQLITE_CORE for static library to use direct SQLite functions
 target_compile_definitions(graph_static PRIVATE SQLITE_CORE)
@@ -101,5 +99,9 @@ install(FILES ../include/graph.h ../include/graph-vtab.h
               ../include/cypher-expressions.h ../include/cypher-optimizer.h
               ../include/cypher-errors.h ../include/cypher-paths.h
               ../include/graph-performance.h
+              ../include/cypher/cypher-token.h
+              ../include/cypher/cypher-lexer.h
+              ../include/cypher/cypher-ast.h
+              ../include/cypher/cypher-parser.h
     DESTINATION include
 )

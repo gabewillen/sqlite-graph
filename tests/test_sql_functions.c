@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "../build/_deps/sqlite3-src/sqlite3.h"
+#include "sqlite3.h"
 
 /* REMINDER: NO LAZY CALLBACKS - IMPLEMENT PROPERLY */
 static int count_callback(void* data, int argc, char** argv, char** col_names) {

@@ -21,28 +21,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 #include <unistd.h>
 #include "graph.h"
 #include "graph-performance.h"
-
-/* Bulk loader configuration */
-typedef struct BulkLoaderConfig {
-    int batchSize;               /* Nodes/edges per transaction */
-    int deferIndexing;           /* Defer index updates */
-    int parallelImport;          /* Use parallel processing */
-    int validateData;            /* Validate during import */
-    int compressProperties;      /* Enable property compression */
-    void (*progressCallback)(int percent, void *arg);
-    void *progressArg;
-
-
-/* Bulk load statistics */
-typedef struct BulkLoadStats {
-    sqlite3_int64 nodesLoaded;
-    sqlite3_int64 edgesLoaded;
-    sqlite3_int64 nodesSkipped;
-    sqlite3_int64 edgesSkipped;
-    sqlite3_int64 bytesProcessed;
-    double elapsedTime;
-    char *lastError;
-} BulkLoadStats;
+#include "graph-bulk.h"
 
 /* CSV parser state */
 typedef struct CSVParser {

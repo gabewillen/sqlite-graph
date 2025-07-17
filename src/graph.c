@@ -14,6 +14,7 @@ SQLITE_EXTENSION_INIT1
 #include "graph.h"
 #include "graph-vtab.h"
 #include "cypher.h"
+#include "graph-util.h"
 #include <string.h>
 #include <stdio.h> // Added for fprintf
 
@@ -30,6 +31,26 @@ SQLITE_EXTENSION_INIT1
 
 /* A global pointer to the graph virtual table. Not ideal, but simple. */
 GraphVtab *pGraph = 0;
+static sqlite3_mutex *pGraphMutex = 0;
+
+/* Thread-safe access to global pGraph */
+static GraphVtab *getGlobalGraph(void) {
+  GraphVtab *result = NULL;
+  if (pGraphMutex) {
+    sqlite3_mutex_enter(pGraphMutex);
+    result = pGraph;
+    sqlite3_mutex_leave(pGraphMutex);
+  }
+  return result;
+}
+
+static void setGlobalGraph(GraphVtab *pNewGraph) {
+  if (pGraphMutex) {
+    sqlite3_mutex_enter(pGraphMutex);
+    pGraph = pNewGraph;
+    sqlite3_mutex_leave(pGraphMutex);
+  }
+}
 
 /*
 ** Forward declarations for SQL functions.
@@ -72,6 +93,15 @@ int sqlite3_graph_init(
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
+  
+  /* Initialize mutex for global pGraph access */
+  if (!pGraphMutex) {
+    pGraphMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    if (!pGraphMutex) {
+      *pzErrMsg = sqlite3_mprintf("Failed to allocate mutex for graph global variable");
+      return SQLITE_NOMEM;
+    }
+  }
   
   /* Register the graph virtual table module */
   rc = sqlite3_create_module(pDb, "graph", &graphModule, (void *)&pGraph);
@@ -213,36 +243,36 @@ int sqlite3_graph_init(
   }
   
   /* Register Cypher language support functions */
-  rc = cypherRegisterSqlFunctions(pDb);
-  if( rc!=SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("Failed to register Cypher SQL functions: %s",
-                                sqlite3_errmsg(pDb));
-    return rc;
-  }
+  // rc = cypherRegisterSqlFunctions(pDb);
+  // if( rc!=SQLITE_OK ){
+  //   *pzErrMsg = sqlite3_mprintf("Failed to register Cypher SQL functions: %s",
+  //                               sqlite3_errmsg(pDb));
+  //   return rc;
+  // }
   
   /* Register Cypher planner functions */
-  rc = cypherRegisterPlannerSqlFunctions(pDb);
-  if( rc!=SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("Failed to register Cypher planner functions: %s",
-                                sqlite3_errmsg(pDb));
-    return rc;
-  }
+  // rc = cypherRegisterPlannerSqlFunctions(pDb);
+  // if( rc!=SQLITE_OK ){
+  //   *pzErrMsg = sqlite3_mprintf("Failed to register Cypher planner functions: %s",
+  //                               sqlite3_errmsg(pDb));
+  //   return rc;
+  // }
   
   /* Register Cypher executor functions */
-  rc = cypherRegisterExecutorSqlFunctions(pDb);
-  if( rc!=SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("Failed to register Cypher executor functions: %s",
-                                sqlite3_errmsg(pDb));
-    return rc;
-  }
+  // rc = cypherRegisterExecutorSqlFunctions(pDb);
+  // if( rc!=SQLITE_OK ){
+  //   *pzErrMsg = sqlite3_mprintf("Failed to register Cypher executor functions: %s",
+  //                               sqlite3_errmsg(pDb));
+  //   return rc;
+  // }
   
   /* Register Cypher write operation functions */
-  rc = cypherRegisterWriteSqlFunctions(pDb);
-  if( rc!=SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("Failed to register Cypher write functions: %s",
-                                sqlite3_errmsg(pDb));
-    return rc;
-  }
+  // rc = cypherRegisterWriteSqlFunctions(pDb);
+  // if( rc!=SQLITE_OK ){
+  //   *pzErrMsg = sqlite3_mprintf("Failed to register Cypher write functions: %s",
+  //                               sqlite3_errmsg(pDb));
+  //   return rc;
+  // }
   
   return SQLITE_OK;
 }
@@ -253,15 +283,16 @@ int sqlite3_graph_init(
 ** Usage: SELECT graph_node_add(1, '{"name": "Alice"}');
 */
 static void graphNodeAddFunc(sqlite3_context *pCtx, int argc, 
-                            sqlite3_value **argv){
-  sqlite3_int64 iNodeId;
-  const unsigned char *zProperties;
-  char *zSql;
-  int rc;
+sqlite3_value **argv){
+sqlite3_int64 iNodeId;
+const unsigned char *zProperties;
+char *zSql;
+int rc;
 
-  if( pGraph==0 ){
-    sqlite3_result_error(pCtx, "No graph table available. Create a graph table first using: CREATE VIRTUAL TABLE mygraph USING graph();", -1);
-    return;
+GraphVtab *pLocalGraph = getGlobalGraph();
+if( pLocalGraph==0 ){
+sqlite3_result_error(pCtx, "No graph table available. Create a graph table first using: CREATE VIRTUAL TABLE mygraph USING graph();", -1);
+  return;
   }
 
   /* Validate argument count */
@@ -274,8 +305,8 @@ static void graphNodeAddFunc(sqlite3_context *pCtx, int argc,
   iNodeId = sqlite3_value_int64(argv[0]);
   zProperties = sqlite3_value_text(argv[1]);
 
-  zSql = sqlite3_mprintf("INSERT INTO %s_nodes(id, properties) VALUES(%lld, %Q)", pGraph->zTableName, iNodeId, zProperties);
-  rc = sqlite3_exec(pGraph->pDb, zSql, 0, 0, 0);
+  zSql = sqlite3_mprintf("INSERT INTO %s_nodes(id, properties) VALUES(%lld, %Q)", pLocalGraph->zTableName, iNodeId, zProperties);
+  rc = sqlite3_exec(pLocalGraph->pDb, zSql, 0, 0, 0);
   sqlite3_free(zSql);
 
   if( rc!=SQLITE_OK ){
@@ -845,3 +876,199 @@ static void graphStronglyConnectedComponentsFunc(sqlite3_context *pCtx, int argc
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
+
+int graphAddNode(GraphVtab *pVtab, sqlite3_int64 iNodeId, 
+                 const char *zProperties){
+  char *zSql;
+  int rc;
+
+  zSql = sqlite3_mprintf("INSERT INTO %s_nodes(id, properties) VALUES(%lld, %Q)", pVtab->zTableName, iNodeId, zProperties);
+  rc = sqlite3_exec(pVtab->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  return rc;
+}
+
+int graphRemoveNode(GraphVtab *pVtab, sqlite3_int64 iNodeId){
+  char *zSql;
+  int rc;
+
+  zSql = sqlite3_mprintf("DELETE FROM %s_nodes WHERE id = %lld", pVtab->zTableName, iNodeId);
+  rc = sqlite3_exec(pVtab->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+  if( rc!=SQLITE_OK ) return rc;
+
+  zSql = sqlite3_mprintf("DELETE FROM %s_edges WHERE from_id = %lld OR to_id = %lld", pVtab->zTableName, iNodeId, iNodeId);
+  rc = sqlite3_exec(pVtab->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  return rc;
+}
+
+int graphGetNode(GraphVtab *pVtab, sqlite3_int64 iNodeId, 
+                 char **pzProperties){
+  char *zSql;
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  zSql = sqlite3_mprintf("SELECT properties FROM %s_nodes WHERE id = %lld", pVtab->zTableName, iNodeId);
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_step(pStmt);
+  if( rc==SQLITE_ROW ){
+    *pzProperties = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+    rc = SQLITE_OK;
+  } else {
+    *pzProperties = 0;
+    rc = SQLITE_NOTFOUND;
+  }
+  sqlite3_finalize(pStmt);
+  return rc;
+}
+
+int graphAddEdge(GraphVtab *pVtab, sqlite3_int64 iFromId, 
+                 sqlite3_int64 iToId, double rWeight, 
+                 const char *zProperties){
+  char *zSql;
+  int rc;
+
+  zSql = sqlite3_mprintf("INSERT INTO %s_edges(from_id, to_id, weight, properties) VALUES(%lld, %lld, %f, %Q)", pVtab->zTableName, iFromId, iToId, rWeight, zProperties);
+  rc = sqlite3_exec(pVtab->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  return rc;
+}
+
+int graphRemoveEdge(GraphVtab *pVtab, sqlite3_int64 iFromId, 
+                    sqlite3_int64 iToId){
+  char *zSql;
+  int rc;
+
+  zSql = sqlite3_mprintf("DELETE FROM %s_edges WHERE from_id = %lld AND to_id = %lld", pVtab->zTableName, iFromId, iToId);
+  rc = sqlite3_exec(pVtab->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  return rc;
+}
+
+int graphUpdateNode(GraphVtab *pVtab, sqlite3_int64 iNodeId, 
+                    const char *zProperties){
+  char *zSql;
+  int rc;
+
+  zSql = sqlite3_mprintf("UPDATE %s_nodes SET properties = %Q WHERE id = %lld", pVtab->zTableName, zProperties, iNodeId);
+  rc = sqlite3_exec(pVtab->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  return rc;
+}
+
+int graphGetEdge(GraphVtab *pVtab, sqlite3_int64 iFromId, 
+                 sqlite3_int64 iToId, double *prWeight, 
+                 char **pzProperties){
+  char *zSql;
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  zSql = sqlite3_mprintf("SELECT weight, properties FROM %s_edges WHERE from_id = %lld AND to_id = %lld", pVtab->zTableName, iFromId, iToId);
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_step(pStmt);
+  if( rc==SQLITE_ROW ){
+    *prWeight = sqlite3_column_double(pStmt, 0);
+    *pzProperties = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
+    rc = SQLITE_OK;
+  } else {
+    *prWeight = 0.0;
+    *pzProperties = 0;
+    rc = SQLITE_NOTFOUND;
+  }
+  sqlite3_finalize(pStmt);
+  return rc;
+}
+
+int graphCountNodes(GraphVtab *pVtab){
+  char *zSql;
+  sqlite3_stmt *pStmt;
+  int rc;
+  int nNodes = 0;
+
+  zSql = sqlite3_mprintf("SELECT count(*) FROM %s_nodes", pVtab->zTableName);
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+    nNodes = sqlite3_column_int(pStmt, 0);
+  }
+  sqlite3_finalize(pStmt);
+  return nNodes;
+}
+
+int graphCountEdges(GraphVtab *pVtab){
+  char *zSql;
+  sqlite3_stmt *pStmt;
+  int rc;
+  int nEdges = 0;
+
+  zSql = sqlite3_mprintf("SELECT count(*) FROM %s_edges", pVtab->zTableName);
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+    nEdges = sqlite3_column_int(pStmt, 0);
+  }
+  sqlite3_finalize(pStmt);
+  return nEdges;
+}
+
+GraphNode *graphFindNode(GraphVtab *pVtab, sqlite3_int64 iNodeId){
+  char *zSql;
+  sqlite3_stmt *pStmt;
+  int rc;
+  GraphNode *pNode = 0;
+
+  zSql = sqlite3_mprintf("SELECT id, properties FROM %s_nodes WHERE id = %lld", pVtab->zTableName, iNodeId);
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc!=SQLITE_OK ) return 0;
+
+  rc = sqlite3_step(pStmt);
+  if( rc==SQLITE_ROW ){
+    pNode = sqlite3_malloc(sizeof(GraphNode));
+    if( pNode ){
+      pNode->iNodeId = sqlite3_column_int64(pStmt, 0);
+      pNode->zProperties = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
+    }
+  }
+  sqlite3_finalize(pStmt);
+  return pNode;
+}
+
+GraphEdge *graphFindEdge(GraphVtab *pVtab, sqlite3_int64 iFromId, 
+                         sqlite3_int64 iToId){
+  char *zSql;
+  sqlite3_stmt *pStmt;
+  int rc;
+  GraphEdge *pEdge = 0;
+
+  zSql = sqlite3_mprintf("SELECT id, from_id, to_id, weight, properties FROM %s_edges WHERE from_id = %lld AND to_id = %lld", pVtab->zTableName, iFromId, iToId);
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc!=SQLITE_OK ) return 0;
+
+  rc = sqlite3_step(pStmt);
+  if( rc==SQLITE_ROW ){
+    pEdge = sqlite3_malloc(sizeof(GraphEdge));
+    if( pEdge ){
+      pEdge->iEdgeId = sqlite3_column_int64(pStmt, 0);
+      pEdge->iFromId = sqlite3_column_int64(pStmt, 1);
+      pEdge->iToId = sqlite3_column_int64(pStmt, 2);
+      pEdge->rWeight = sqlite3_column_double(pStmt, 3);
+      pEdge->zProperties = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 4));
+    }
+  }
+  sqlite3_finalize(pStmt);
+  return pEdge;
+}

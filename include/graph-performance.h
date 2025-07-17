@@ -11,6 +11,7 @@
 
 #include "graph.h"
 #include "cypher-planner.h"
+#include "graph-bulk.h"
 
 /*
 ** Query Performance Optimization
@@ -200,10 +201,6 @@ void graphCompressionStats(sqlite3_int64 *pDictEntries,
                           size_t *pSavedBytes);
 void graphCompressionShutdown(void);
 int graphRegisterCompressionFunctions(sqlite3 *db);
-
-/* Bulk loading - forward declarations for internal types */
-struct BulkLoaderConfig;
-struct BulkLoadStats;
 
 /* Bulk loading functions */
 int graphBulkLoadNodesCSV(GraphVtab *pGraph, const char *csvData,

@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "build/_deps/sqlite3-src/sqlite3.h"
+#include "sqlite3.h"
 
 static int callback(void* data, int argc, char** argv, char** col_names) {
     for (int i = 0; i < argc; i++) {

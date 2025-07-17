@@ -9,7 +9,7 @@
 #define SQLITE_CORE
 #include "unity.h"
 #include "sqlite3.h"
-#include "../include/cypher-planner.h"
+#include "cypher-planner.h"
 #include <string.h>
 #include <stdlib.h>
 

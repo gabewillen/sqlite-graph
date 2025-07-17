@@ -85,22 +85,182 @@ int graphSetNodeLabels(GraphVtab *pVtab, sqlite3_int64 iNodeId,
 
 int graphAddNodeLabel(GraphVtab *pVtab, sqlite3_int64 iNodeId,
                       const char *zLabel) {
-  (void)pVtab;
-  (void)iNodeId;
-  (void)zLabel;
-  // This function is now more complex as it requires reading, modifying, and writing JSON.
-  // For now, we will leave it as a no-op.
-  return SQLITE_OK;
+  char *zSql, *zExistingLabels = NULL, *zNewLabels = NULL;
+  sqlite3_stmt *pStmt;
+  int rc;
+  
+  // Input validation
+  if (!pVtab || !zLabel || iNodeId <= 0) {
+    return SQLITE_MISUSE;
+  }
+  
+  // Step 1: Get existing labels
+  zSql = sqlite3_mprintf("SELECT labels FROM %s_nodes WHERE id = %lld", 
+                        pVtab->zTableName, iNodeId);
+  if (!zSql) return SQLITE_NOMEM;
+  
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, NULL);
+  sqlite3_free(zSql);
+  if (rc != SQLITE_OK) return rc;
+  
+  if (sqlite3_step(pStmt) == SQLITE_ROW) {
+    const char *zLabels = (const char*)sqlite3_column_text(pStmt, 0);
+    if (zLabels) {
+      zExistingLabels = sqlite3_mprintf("%s", zLabels);
+    }
+  }
+  sqlite3_finalize(pStmt);
+  
+  // Step 2: Check if label already exists
+  if (zExistingLabels) {
+    char *zSearchPattern = sqlite3_mprintf("\"%s\"", zLabel);
+    if (strstr(zExistingLabels, zSearchPattern)) {
+      // Label already exists
+      sqlite3_free(zExistingLabels);
+      sqlite3_free(zSearchPattern);
+      return SQLITE_OK;
+    }
+    sqlite3_free(zSearchPattern);
+    
+    // Step 3: Add new label to existing array
+    // Remove closing bracket and add new label
+    size_t len = strlen(zExistingLabels);
+    if (len > 0 && zExistingLabels[len-1] == ']') {
+      zExistingLabels[len-1] = '\0'; // Remove closing bracket
+      zNewLabels = sqlite3_mprintf("%s,\"%s\"]", zExistingLabels, zLabel);
+    } else {
+      // Malformed JSON, rebuild array
+      zNewLabels = sqlite3_mprintf("[\"%s\"]", zLabel);
+    }
+  } else {
+    // No existing labels, create new array
+    zNewLabels = sqlite3_mprintf("[\"%s\"]", zLabel);
+  }
+  
+  if (!zNewLabels) {
+    sqlite3_free(zExistingLabels);
+    return SQLITE_NOMEM;
+  }
+  
+  // Step 4: Update database
+  zSql = sqlite3_mprintf("UPDATE %s_nodes SET labels = %Q WHERE id = %lld", 
+                        pVtab->zTableName, zNewLabels, iNodeId);
+  
+  if (!zSql) {
+    sqlite3_free(zExistingLabels);
+    sqlite3_free(zNewLabels);
+    return SQLITE_NOMEM;
+  }
+  
+  rc = sqlite3_exec(pVtab->pDb, zSql, NULL, NULL, NULL);
+  
+  // Cleanup
+  sqlite3_free(zExistingLabels);
+  sqlite3_free(zNewLabels);
+  sqlite3_free(zSql);
+  
+  return rc;
 }
 
 int graphRemoveNodeLabel(GraphVtab *pVtab, sqlite3_int64 iNodeId,
                          const char *zLabel) {
-  (void)pVtab;
-  (void)iNodeId;
-  (void)zLabel;
-  // This function is now more complex as it requires reading, modifying, and writing JSON.
-  // For now, we will leave it as a no-op.
-  return SQLITE_OK;
+  char *zSql, *zExistingLabels = NULL, *zNewLabels = NULL;
+  sqlite3_stmt *pStmt;
+  int rc;
+  
+  // Input validation
+  if (!pVtab || !zLabel || iNodeId <= 0) {
+    return SQLITE_MISUSE;
+  }
+  
+  // Step 1: Get existing labels
+  zSql = sqlite3_mprintf("SELECT labels FROM %s_nodes WHERE id = %lld", 
+                        pVtab->zTableName, iNodeId);
+  if (!zSql) return SQLITE_NOMEM;
+  
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, NULL);
+  sqlite3_free(zSql);
+  if (rc != SQLITE_OK) return rc;
+  
+  if (sqlite3_step(pStmt) == SQLITE_ROW) {
+    const char *zLabels = (const char*)sqlite3_column_text(pStmt, 0);
+    if (zLabels) {
+      zExistingLabels = sqlite3_mprintf("%s", zLabels);
+    }
+  }
+  sqlite3_finalize(pStmt);
+  
+  if (!zExistingLabels) {
+    return SQLITE_OK; // No labels to remove
+  }
+  
+  // Step 2: Build new labels array without the target label
+  // Parse JSON array and rebuild without target label
+  char *zNewArray = sqlite3_mprintf("[");
+  if (!zNewArray) {
+    sqlite3_free(zExistingLabels);
+    return SQLITE_NOMEM;
+  }
+  
+  // Simple JSON parsing for label removal
+  char *zCurrent = zExistingLabels;
+  int bFirst = 1;
+  
+  while (*zCurrent) {
+    if (*zCurrent == '"') {
+      // Start of label
+      char *zLabelStart = ++zCurrent;
+      while (*zCurrent && *zCurrent != '"') zCurrent++;
+      if (*zCurrent == '"') {
+        size_t labelLen = zCurrent - zLabelStart;
+        if (labelLen != strlen(zLabel) || strncmp(zLabelStart, zLabel, labelLen) != 0) {
+          // Keep this label
+          char *zTemp = sqlite3_mprintf("%s%s\"%.*s\"", 
+                                       zNewArray, bFirst ? "" : ",", 
+                                       (int)labelLen, zLabelStart);
+          if (!zTemp) {
+            sqlite3_free(zExistingLabels);
+            sqlite3_free(zNewArray);
+            return SQLITE_NOMEM;
+          }
+          sqlite3_free(zNewArray);
+          zNewArray = zTemp;
+          bFirst = 0;
+        }
+        zCurrent++;
+      }
+    } else {
+      zCurrent++;
+    }
+  }
+  
+  // Close array
+  zNewLabels = sqlite3_mprintf("%s]", zNewArray);
+  sqlite3_free(zNewArray);
+  
+  if (!zNewLabels) {
+    sqlite3_free(zExistingLabels);
+    return SQLITE_NOMEM;
+  }
+  
+  // Step 3: Update database
+  zSql = sqlite3_mprintf("UPDATE %s_nodes SET labels = %Q WHERE id = %lld", 
+                        pVtab->zTableName, zNewLabels, iNodeId);
+  
+  if (!zSql) {
+    sqlite3_free(zExistingLabels);
+    sqlite3_free(zNewLabels);
+    return SQLITE_NOMEM;
+  }
+  
+  rc = sqlite3_exec(pVtab->pDb, zSql, NULL, NULL, NULL);
+  
+  // Cleanup
+  sqlite3_free(zExistingLabels);
+  sqlite3_free(zNewLabels);
+  sqlite3_free(zSql);
+  
+  return rc;
 }
 
 int graphGetNodeLabels(GraphVtab *pVtab, sqlite3_int64 iNodeId,
@@ -128,10 +288,36 @@ int graphGetNodeLabels(GraphVtab *pVtab, sqlite3_int64 iNodeId,
 
 int graphNodeHasLabel(GraphVtab *pVtab, sqlite3_int64 iNodeId,
                       const char *zLabel) {
-  (void)pVtab;
-  (void)iNodeId;
-  (void)zLabel;
-  // This function is now more complex as it requires reading and parsing JSON.
-  // For now, we will leave it as a no-op.
-  return 0;
+  char *zSql;
+  sqlite3_stmt *pStmt;
+  int rc, bHasLabel = 0;
+  
+  // Input validation
+  if (!pVtab || !zLabel || iNodeId <= 0) {
+    return 0; // Return false for invalid input
+  }
+  
+  // Query for node labels
+  zSql = sqlite3_mprintf("SELECT labels FROM %s_nodes WHERE id = %lld", 
+                        pVtab->zTableName, iNodeId);
+  if (!zSql) return 0;
+  
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, NULL);
+  sqlite3_free(zSql);
+  if (rc != SQLITE_OK) return 0;
+  
+  if (sqlite3_step(pStmt) == SQLITE_ROW) {
+    const char *zLabels = (const char*)sqlite3_column_text(pStmt, 0);
+    if (zLabels) {
+      // Search for label in JSON array
+      char *zSearchPattern = sqlite3_mprintf("\"%s\"", zLabel);
+      if (zSearchPattern) {
+        bHasLabel = (strstr(zLabels, zSearchPattern) != NULL);
+        sqlite3_free(zSearchPattern);
+      }
+    }
+  }
+  
+  sqlite3_finalize(pStmt);
+  return bHasLabel;
 }

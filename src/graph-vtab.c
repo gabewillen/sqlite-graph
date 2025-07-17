@@ -136,8 +136,8 @@ int graphCreate(sqlite3 *pDb, void *pAux, int argc,
   }
   
   *ppVtab = &pNew->base;
-  extern GraphVtab *pGraph;
-  pGraph = pNew;
+  extern void setGlobalGraph(GraphVtab *pNewGraph);
+  setGlobalGraph(pNew);
   return SQLITE_OK;
 }
 
@@ -199,8 +199,8 @@ int graphConnect(sqlite3 *pDb, void *pAux, int argc,
   }
 
   *ppVtab = &pNew->base;
-  extern GraphVtab *pGraph;
-  pGraph = pNew;
+  extern void setGlobalGraph(GraphVtab *pNewGraph);
+  setGlobalGraph(pNew);
   return SQLITE_OK;
 }
 

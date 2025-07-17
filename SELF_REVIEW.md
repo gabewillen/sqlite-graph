@@ -35,7 +35,7 @@ This document is a **mandatory self-review checklist** that you, as an AI agent,
 
 **CONTINUE UNTIL:** These commands return ZERO results:
 ```bash
-grep -r "TODO\|FIXME\|NOTE\|XXX\|HACK\|STUB" src/ include/
+grep -r "TODO\|FIXME\|NOTE\|XXX\|HACK\|STUB\|Dummy" src/ include/
 grep -r "Placeholder\|placeholder" src/ include/
 grep -r "Not implemented\|not implemented" src/ include/
 grep -r "return 0.*TODO\|return NULL.*TODO" src/ include/
@@ -368,7 +368,7 @@ printf("%s", sanitizedInput);
 
 ```bash
 # 1. THINK: Do I have any placeholder code left?
-grep -r "TODO\|FIXME\|NOTE\|XXX\|HACK\|STUB" src/ include/
+grep -r "TODO\|FIXME\|NOTE\|XXX\|HACK\|STUB\|Dummy" src/ include/
 # IF THIS RETURNS ANYTHING: CONTINUE working until it returns nothing
 
 # 2. THINK: Does my code build without any warnings?

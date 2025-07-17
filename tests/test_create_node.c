@@ -11,11 +11,13 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "sqlite3.h"
-#include "../include/graph-extension.h"
-#include "../src/graph-vtab.h"
-#include "../include/cypher.h"
-#include "../include/cypher-executor.h"
-#include "../include/cypher-write.h"
+#include "graph.h"
+#include "graph-vtab.h"
+#include "cypher.h"
+#include "cypher-executor.h"
+#include "cypher-write.h"
+#include "unity.h" // Added for Unity test framework functions
+#include "test_util.h" // Include common test utilities
 
 /* Global database and graph context */
 static sqlite3 *g_db = NULL;
@@ -45,11 +47,10 @@ void setUp(void) {
     rc = sqlite3_prepare_v2(g_db, "SELECT 1 FROM test_graph WHERE 1=0", -1, &pStmt, NULL);
     TEST_ASSERT_EQUAL(SQLITE_OK, rc);
     
-    sqlite3_vtab_cursor *pCursor;
-    rc = sqlite3_vtab_cursor_open(pStmt, &pCursor);
-    if (rc == SQLITE_OK && pCursor && pCursor->pVtab) {
-        g_graph = (GraphVtab*)pCursor->pVtab;
-    }
+    /* Note: Removed problematic vtab cursor code that used wrong API */
+    /* Instead, rely on the global graph variable being set during vtab creation */
+    extern GraphVtab *pGraph;
+    g_graph = pGraph;
     sqlite3_finalize(pStmt);
     
     /* Fallback: Create minimal GraphVtab for testing */
@@ -81,8 +82,8 @@ void tearDown(void) {
         g_execCtx = NULL;
     }
     
-    if (g_graph && g_graph != (GraphVtab*)sqlite3_db_handle(g_db)) {
-        sqlite3_free(g_graph);
+    if (g_graph) {
+        /* Proper cleanup without type confusion */
         g_graph = NULL;
     }
     

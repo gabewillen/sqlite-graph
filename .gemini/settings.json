@@ -1,0 +1,9 @@
+{
+    "contextFileName": "contributing/README.md",
+    "fileFiltering": {
+        "respectGitIgnore": true
+    },
+    "excludeTools": [
+        "EditTool"
+    ]
+}

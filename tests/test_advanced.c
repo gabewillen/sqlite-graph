@@ -8,8 +8,8 @@
 #define SQLITE_CORE
 #include "unity.h"
 #include "sqlite3.h"
-#include "../include/graph.h"
-#include "../include/graph-vtab.h"
+#include "graph.h"
+#include "graph-vtab.h"
 #include <string.h>
 #include <math.h>
 

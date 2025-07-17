@@ -1,27 +1,33 @@
+# Main Makefile
+
+# Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -std=c99
-LDFLAGS = -lm
+CFLAGS = -I$(CURDIR)/include -I$(CURDIR)/src -I$(CURDIR)/_deps/sqlite-src -I$(CURDIR)/_deps/Unity-2.5.2/src -g -O0 -std=gnu99 -fPIC
+LDFLAGS = -lm -ldl -lpthread
+
+# Directories
 BUILD_DIR = build
+SRC_DIR = src
+TESTS_DIR = tests
 
-.PHONY: all clean test rebuild grammar src tests
+.PHONY: all clean test rebuild deps
 
-all: $(BUILD_DIR) src tests
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+all: deps
+	@mkdir -p $(BUILD_DIR)
+	$(MAKE) -C $(SRC_DIR) CFLAGS="$(CFLAGS)"
+	$(MAKE) -C $(TESTS_DIR) CFLAGS="$(CFLAGS)"
 
-src:
-	$(MAKE) -C src
-
-tests: src
-	$(MAKE) -C tests
+deps:
+	$(MAKE) -C _deps
 
 clean:
-	$(MAKE) -C src clean
-	$(MAKE) -C tests clean
+	$(MAKE) -C $(SRC_DIR) clean
+	$(MAKE) -C $(TESTS_DIR) clean
+	$(MAKE) -C _deps clean
 	rm -rf $(BUILD_DIR)
 
-test: all
-	$(MAKE) -C tests test
+test:
+	$(MAKE) -C $(TESTS_DIR) test
 
 rebuild: clean all
