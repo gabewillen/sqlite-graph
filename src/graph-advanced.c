@@ -47,6 +47,102 @@ NodeIndexMap *createNodeIndexMap(GraphVtab *pVtab);
 int getNodeIndex(NodeIndexMap *pMap, sqlite3_int64 iNodeId);
 void freeNodeIndexMap(NodeIndexMap *pMap);
 
+/*
+** Create a node index map from the backing table.
+** This provides O(1) lookup for node indices in algorithms.
+*/
+NodeIndexMap *createNodeIndexMap(GraphVtab *pVtab) {
+  NodeIndexMap *pMap = sqlite3_malloc(sizeof(NodeIndexMap));
+  if (!pMap) return NULL;
+  
+  pMap->aNodeIds = NULL;
+  pMap->nNodes = 0;
+  
+  char *zSql = sqlite3_mprintf("SELECT id FROM %s_nodes ORDER BY id", pVtab->zTableName);
+  sqlite3_stmt *pStmt;
+  int rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, NULL);
+  sqlite3_free(zSql);
+  
+  if (rc != SQLITE_OK) {
+    sqlite3_free(pMap);
+    return NULL;
+  }
+  
+  /* Count nodes first */
+  while (sqlite3_step(pStmt) == SQLITE_ROW) {
+    pMap->nNodes++;
+  }
+  
+  sqlite3_finalize(pStmt);
+  
+  if (pMap->nNodes == 0) {
+    sqlite3_free(pMap);
+    return NULL;
+  }
+  
+  /* Allocate array for node IDs */
+  pMap->aNodeIds = sqlite3_malloc(pMap->nNodes * sizeof(sqlite3_int64));
+  if (!pMap->aNodeIds) {
+    sqlite3_free(pMap);
+    return NULL;
+  }
+  
+  /* Fill array with node IDs */
+  zSql = sqlite3_mprintf("SELECT id FROM %s_nodes ORDER BY id", pVtab->zTableName);
+  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pStmt, NULL);
+  sqlite3_free(zSql);
+  
+  if (rc != SQLITE_OK) {
+    sqlite3_free(pMap->aNodeIds);
+    sqlite3_free(pMap);
+    return NULL;
+  }
+  
+  int i = 0;
+  while (sqlite3_step(pStmt) == SQLITE_ROW && i < pMap->nNodes) {
+    pMap->aNodeIds[i] = sqlite3_column_int64(pStmt, 0);
+    i++;
+  }
+  
+  sqlite3_finalize(pStmt);
+  return pMap;
+}
+
+/*
+** Get the index of a node ID in the index map.
+** Returns -1 if not found.
+*/
+int getNodeIndex(NodeIndexMap *pMap, sqlite3_int64 iNodeId) {
+  if (!pMap || !pMap->aNodeIds) return -1;
+  
+  /* Binary search since nodes are ordered by ID */
+  int left = 0;
+  int right = pMap->nNodes - 1;
+  
+  while (left <= right) {
+    int mid = (left + right) / 2;
+    if (pMap->aNodeIds[mid] == iNodeId) {
+      return mid;
+    } else if (pMap->aNodeIds[mid] < iNodeId) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+  
+  return -1;
+}
+
+/*
+** Free a node index map.
+*/
+void freeNodeIndexMap(NodeIndexMap *pMap) {
+  if (pMap) {
+    sqlite3_free(pMap->aNodeIds);
+    sqlite3_free(pMap);
+  }
+}
+
 static void tarjanStrongConnect(GraphVtab *pVtab, TarjanState *pState, 
                                int iNodeIdx){
   TarjanNode *pStackNode;

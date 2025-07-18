@@ -100,9 +100,10 @@ typedef enum {
 // Token Structure
 typedef struct CypherToken {
     CypherTokenType type;
-    char *zValue; // Dynamically allocated string for value (e.g., identifier name, string literal)
-    int iLine;
-    int iColumn;
+    const char *text; // Pointer to input text (not allocated)
+    int len; // Length of token text
+    int line;
+    int column;
 } CypherToken;
 
 // Lexer context structure
@@ -153,6 +154,25 @@ typedef enum {
     CYPHER_AST_LIST,
     CYPHER_AST_FUNCTION_CALL,
     CYPHER_AST_CASE,
+    CYPHER_AST_PROPERTY_PAIR, // For key: value pairs in maps
+    
+    // Expression AST node types
+    CYPHER_AST_AND,
+    CYPHER_AST_NOT,
+    CYPHER_AST_COMPARISON,
+    CYPHER_AST_ADDITIVE,
+    CYPHER_AST_MULTIPLICATIVE,
+    
+    // Collection types
+    CYPHER_AST_ARRAY,
+    CYPHER_AST_OBJECT,
+    
+    // Advanced operators
+    CYPHER_AST_STARTS_WITH,
+    CYPHER_AST_ENDS_WITH,
+    CYPHER_AST_CONTAINS_OP,
+    CYPHER_AST_REGEX,
+    
     CYPHER_AST_COUNT // Sentinel for max AST node type
 } CypherAstNodeType;
 
@@ -173,7 +193,9 @@ CypherAst *cypherAstCreate(CypherAstNodeType type, int iLine, int iColumn);
 CypherAst *cypherAstCreateIdentifier(const char *zName, int iLine, int iColumn);
 CypherAst *cypherAstCreateLiteral(const char *zValue, int iLine, int iColumn);
 CypherAst *cypherAstCreateBinaryOp(const char *zOp, CypherAst *pLeft, CypherAst *pRight, int iLine, int iColumn);
+CypherAst *cypherAstCreateUnaryOp(const char *zOp, CypherAst *pExpr, int iLine, int iColumn);
 CypherAst *cypherAstCreateProperty(CypherAst *pObj, const char *zProp, int iLine, int iColumn);
+CypherAst *cypherAstCreateNodeLabel(const char *zLabel, int iLine, int iColumn);
 
 // AST Node manipulation functions
 void cypherAstAddChild(CypherAst *pParent, CypherAst *pChild);
@@ -194,12 +216,19 @@ const char *cypherAstNodeTypeName(CypherAstNodeType type);
 
 // Parser context structure
 struct CypherParser {
-    char *zError;
+    char *zErrorMsg;
+    CypherAst *pAst;
 };
 
 // Parser Functions
 CypherParser *cypherParserCreate(void);
 void cypherParserDestroy(CypherParser *pParser);
 CypherAst *cypherParse(CypherParser *pParser, const char *zQuery, char **pzErrMsg);
+
+// SQL Function Registration
+int cypherRegisterSqlFunctions(sqlite3 *db);
+int cypherRegisterWriteSqlFunctions(sqlite3 *db);
+int cypherRegisterPlannerSqlFunctions(sqlite3 *db);
+int cypherRegisterExecutorSqlFunctions(sqlite3 *db);
 
 #endif // CYPHER_H

@@ -314,6 +314,50 @@ int cypherEvaluateComparison(const CypherValue *pLeft, const CypherValue *pRight
         case CYPHER_CMP_GREATER_EQUAL:
             result = (cmp >= 0);
             break;
+        case CYPHER_CMP_STARTS_WITH:
+            if (pLeft->type == CYPHER_VALUE_STRING && pRight->type == CYPHER_VALUE_STRING) {
+                result = (strncmp(pLeft->u.zString, pRight->u.zString, strlen(pRight->u.zString)) == 0);
+            } else {
+                cypherValueSetNull(pResult);
+                return SQLITE_OK;
+            }
+            break;
+        case CYPHER_CMP_ENDS_WITH:
+            if (pLeft->type == CYPHER_VALUE_STRING && pRight->type == CYPHER_VALUE_STRING) {
+                int leftLen = strlen(pLeft->u.zString);
+                int rightLen = strlen(pRight->u.zString);
+                if (rightLen > leftLen) {
+                    result = 0;
+                } else {
+                    result = (strcmp(pLeft->u.zString + leftLen - rightLen, pRight->u.zString) == 0);
+                }
+            } else {
+                cypherValueSetNull(pResult);
+                return SQLITE_OK;
+            }
+            break;
+        case CYPHER_CMP_CONTAINS:
+            if (pLeft->type == CYPHER_VALUE_STRING && pRight->type == CYPHER_VALUE_STRING) {
+                result = (strstr(pLeft->u.zString, pRight->u.zString) != NULL);
+            } else {
+                cypherValueSetNull(pResult);
+                return SQLITE_OK;
+            }
+            break;
+        case CYPHER_CMP_IN:
+            if (pRight->type == CYPHER_VALUE_LIST) {
+                result = 0;
+                for (int i = 0; i < pRight->u.list.nValues; i++) {
+                    if (cypherValueCompare(pLeft, &pRight->u.list.apValues[i]) == 0) {
+                        result = 1;
+                        break;
+                    }
+                }
+            } else {
+                cypherValueSetNull(pResult);
+                return SQLITE_OK;
+            }
+            break;
         default:
             return SQLITE_ERROR;
     }
@@ -426,6 +470,42 @@ int cypherExpressionCreateArithmetic(CypherExpression **ppExpr,
     return SQLITE_OK;
 }
 
+/* Helper function to convert token text to comparison operator */
+static CypherComparisonOp getComparisonOpFromToken(const char *zToken) {
+    if (strcmp(zToken, "=") == 0) return CYPHER_CMP_EQUAL;
+    if (strcmp(zToken, "<>") == 0) return CYPHER_CMP_NOT_EQUAL;
+    if (strcmp(zToken, "<") == 0) return CYPHER_CMP_LESS;
+    if (strcmp(zToken, "<=") == 0) return CYPHER_CMP_LESS_EQUAL;
+    if (strcmp(zToken, ">") == 0) return CYPHER_CMP_GREATER;
+    if (strcmp(zToken, ">=") == 0) return CYPHER_CMP_GREATER_EQUAL;
+    if (strcmp(zToken, "STARTS WITH") == 0) return CYPHER_CMP_STARTS_WITH;
+    if (strcmp(zToken, "ENDS WITH") == 0) return CYPHER_CMP_ENDS_WITH;
+    if (strcmp(zToken, "CONTAINS") == 0) return CYPHER_CMP_CONTAINS;
+    if (strcmp(zToken, "IN") == 0) return CYPHER_CMP_IN;
+    return CYPHER_CMP_EQUAL; // Default fallback
+}
+
+/* Comparison expression creation */
+int cypherExpressionCreateComparison(CypherExpression **ppExpr,
+                                   CypherExpression *pLeft,
+                                   CypherExpression *pRight,
+                                   CypherComparisonOp op) {
+    CypherExpression *pExpr;
+    int rc;
+    
+    if (!ppExpr || !pLeft || !pRight) return SQLITE_MISUSE;
+    
+    rc = cypherExpressionCreate(&pExpr, CYPHER_EXPR_COMPARISON);
+    if (rc != SQLITE_OK) return rc;
+    
+    pExpr->u.binary.pLeft = pLeft;
+    pExpr->u.binary.pRight = pRight;
+    pExpr->u.binary.op = op;
+    
+    *ppExpr = pExpr;
+    return SQLITE_OK;
+}
+
 /* Built-in function registration */
 static CypherBuiltinFunction g_builtinFunctions[] = {
     {"toUpper", 1, 1, cypherFunctionToUpper},
@@ -438,6 +518,11 @@ static CypherBuiltinFunction g_builtinFunctions[] = {
     {"round", 1, 1, cypherFunctionRound},
     {"sqrt", 1, 1, cypherFunctionSqrt},
     {"toString", 1, 1, cypherFunctionToString},
+    {"count", 1, 1, cypherFunctionCount},
+    {"sum", 1, 1, cypherFunctionSum},
+    {"avg", 1, 1, cypherFunctionAvg},
+    {"min", 1, 1, cypherFunctionMin},
+    {"max", 1, 1, cypherFunctionMax},
     {NULL, 0, 0, NULL} /* Sentinel */
 };
 
@@ -799,8 +884,78 @@ int cypherExecutionContextLookupVariable(ExecutionContext *pCtx,
         *pResult = *pCopy;
         sqlite3_free(pCopy);
     } else {
-        cypherValueSetNull(pResult);
+    cypherValueSetNull(pResult);
+    }
+
+    return SQLITE_OK;
+}
+
+/* Aggregate functions implementation */
+int cypherFunctionCount(CypherValue *apArgs, int nArgs, CypherValue *pResult) {
+    if (nArgs != 1 || !pResult) return SQLITE_MISUSE;
+    
+    /* For COUNT(*), any non-null value counts as 1 */
+    if (apArgs[0].type == CYPHER_VALUE_NULL) {
+        cypherValueSetInteger(pResult, 0);
+    } else {
+        cypherValueSetInteger(pResult, 1);
     }
     
+    return SQLITE_OK;
+}
+
+int cypherFunctionSum(CypherValue *apArgs, int nArgs, CypherValue *pResult) {
+    if (nArgs != 1 || !pResult) return SQLITE_MISUSE;
+    
+    switch (apArgs[0].type) {
+        case CYPHER_VALUE_INTEGER:
+            cypherValueSetInteger(pResult, apArgs[0].u.iInteger);
+            return SQLITE_OK;
+            
+        case CYPHER_VALUE_FLOAT:
+            cypherValueSetFloat(pResult, apArgs[0].u.rFloat);
+            return SQLITE_OK;
+            
+        case CYPHER_VALUE_NULL:
+            cypherValueSetNull(pResult);
+            return SQLITE_OK;
+            
+        default:
+            return SQLITE_MISMATCH;
+    }
+}
+
+int cypherFunctionAvg(CypherValue *apArgs, int nArgs, CypherValue *pResult) {
+    if (nArgs != 1 || !pResult) return SQLITE_MISUSE;
+    
+    switch (apArgs[0].type) {
+        case CYPHER_VALUE_INTEGER:
+            cypherValueSetFloat(pResult, (double)apArgs[0].u.iInteger);
+            return SQLITE_OK;
+            
+        case CYPHER_VALUE_FLOAT:
+            cypherValueSetFloat(pResult, apArgs[0].u.rFloat);
+            return SQLITE_OK;
+            
+        case CYPHER_VALUE_NULL:
+            cypherValueSetNull(pResult);
+            return SQLITE_OK;
+            
+        default:
+            return SQLITE_MISMATCH;
+    }
+}
+
+int cypherFunctionMin(CypherValue *apArgs, int nArgs, CypherValue *pResult) {
+    if (nArgs != 1 || !pResult) return SQLITE_MISUSE;
+    
+    *pResult = apArgs[0];
+    return SQLITE_OK;
+}
+
+int cypherFunctionMax(CypherValue *apArgs, int nArgs, CypherValue *pResult) {
+    if (nArgs != 1 || !pResult) return SQLITE_MISUSE;
+    
+    *pResult = apArgs[0];
     return SQLITE_OK;
 }

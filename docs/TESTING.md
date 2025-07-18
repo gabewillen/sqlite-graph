@@ -1,34 +1,20 @@
 # Testing Guide
 
-This project uses CMake and CTest for all build and test operations. We do NOT use Makefiles.
+This project uses Make for all build and test operations.
 
 ## Building and Running Tests
 
 ### Quick Start - From Project Root
 
-With CMake 3.19+ (using presets):
 ```bash
-# Configure and build
-cmake --preset=default
-cmake --build --preset=default
+# Build the project
+make
 
-# Run tests from project root
-ctest --preset=default
-ctest --preset=unit      # Run only unit tests
-ctest --preset=cypher    # Run only Cypher tests
-ctest --preset=verbose   # Run with verbose output
-```
+# Run all tests
+make test
 
-With older CMake or without presets:
-```bash
-# Configure and build
-cmake -B build
-cmake --build build
-
-# Run tests from project root
-ctest --test-dir build
-# or
-cmake --build build --target test
+# Run specific test
+./build/tests/test_cypher_basic
 ```
 
 ### Traditional Method - From Build Directory
@@ -59,7 +45,7 @@ ctest -L performance
 
 ### Test Organization
 
-All tests are managed through CMake/CTest:
+All tests are managed through Make:
 
 1. **Main Test Suite** (`test_graph`)
    - Combines all unit tests into a single executable
@@ -167,8 +153,8 @@ See `.github/workflows/test.yml` for CI configuration.
 
 2. **Create new test file**:
    - Create `tests/test_new_feature.c`
-   - Add to `CMakeLists.txt`:
-     ```cmake
+   - Add to `tests/Makefile`:
+```makefile
      add_executable(test_graph
          # ... existing files ...
          test_new_feature.c

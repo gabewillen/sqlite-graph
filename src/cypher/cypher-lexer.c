@@ -19,7 +19,7 @@
 extern const sqlite3_api_routines *sqlite3_api;
 #endif
 
-#include "cypher/cypher-lexer.h"
+#include "cypher.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -241,6 +241,7 @@ static CypherToken *lexerTokenizeString(CypherLexer *pLexer) {
     return lexerAddToken(pLexer, CYPHER_TOK_STRING, startPos, endPos);
 }
 
+
 CypherToken *cypherLexerNextToken(CypherLexer *pLexer) {
     lexerSkipWhitespace(pLexer);
     lexerSkipComment(pLexer);
@@ -321,4 +322,85 @@ CypherToken *cypherLexerNextToken(CypherLexer *pLexer) {
 
     lexerSetError(pLexer, "Unexpected character: %c", c);
     return lexerAddToken(pLexer, CYPHER_TOK_ERROR, startPos, pLexer->iPos);
+}
+
+/*
+** Return string name for token type - useful for debugging
+*/
+const char *cypherTokenTypeName(CypherTokenType type) {
+    switch (type) {
+        case CYPHER_TOK_EOF: return "EOF";
+        case CYPHER_TOK_ERROR: return "ERROR";
+        case CYPHER_TOK_WHITESPACE: return "WHITESPACE";
+        case CYPHER_TOK_COMMENT: return "COMMENT";
+        case CYPHER_TOK_MATCH: return "MATCH";
+        case CYPHER_TOK_OPTIONAL: return "OPTIONAL";
+        case CYPHER_TOK_WHERE: return "WHERE";
+        case CYPHER_TOK_RETURN: return "RETURN";
+        case CYPHER_TOK_CREATE: return "CREATE";
+        case CYPHER_TOK_MERGE: return "MERGE";
+        case CYPHER_TOK_SET: return "SET";
+        case CYPHER_TOK_DELETE: return "DELETE";
+        case CYPHER_TOK_DETACH: return "DETACH";
+        case CYPHER_TOK_REMOVE: return "REMOVE";
+        case CYPHER_TOK_WITH: return "WITH";
+        case CYPHER_TOK_UNION: return "UNION";
+        case CYPHER_TOK_AS: return "AS";
+        case CYPHER_TOK_ORDER: return "ORDER";
+        case CYPHER_TOK_BY: return "BY";
+        case CYPHER_TOK_ASC: return "ASC";
+        case CYPHER_TOK_DESC: return "DESC";
+        case CYPHER_TOK_LIMIT: return "LIMIT";
+        case CYPHER_TOK_SKIP: return "SKIP";
+        case CYPHER_TOK_DISTINCT: return "DISTINCT";
+        case CYPHER_TOK_AND: return "AND";
+        case CYPHER_TOK_OR: return "OR";
+        case CYPHER_TOK_XOR: return "XOR";
+        case CYPHER_TOK_NOT: return "NOT";
+        case CYPHER_TOK_IN: return "IN";
+        case CYPHER_TOK_STARTS_WITH: return "STARTS_WITH";
+        case CYPHER_TOK_ENDS_WITH: return "ENDS_WITH";
+        case CYPHER_TOK_CONTAINS: return "CONTAINS";
+        case CYPHER_TOK_IS_NULL: return "IS_NULL";
+        case CYPHER_TOK_IS_NOT_NULL: return "IS_NOT_NULL";
+        case CYPHER_TOK_NULL: return "NULL";
+        case CYPHER_TOK_EQ: return "=";
+        case CYPHER_TOK_NE: return "<>";
+        case CYPHER_TOK_LT: return "<";
+        case CYPHER_TOK_LE: return "<=";
+        case CYPHER_TOK_GT: return ">";
+        case CYPHER_TOK_GE: return ">=";
+        case CYPHER_TOK_PLUS: return "+";
+        case CYPHER_TOK_MINUS: return "-";
+        case CYPHER_TOK_MULT: return "*";
+        case CYPHER_TOK_DIV: return "/";
+        case CYPHER_TOK_MOD: return "%";
+        case CYPHER_TOK_POW: return "^";
+        case CYPHER_TOK_DOT: return ".";
+        case CYPHER_TOK_COLON: return ":";
+        case CYPHER_TOK_COMMA: return ",";
+        case CYPHER_TOK_SEMICOLON: return ";";
+        case CYPHER_TOK_LPAREN: return "(";
+        case CYPHER_TOK_RPAREN: return ")";
+        case CYPHER_TOK_LBRACKET: return "[";
+        case CYPHER_TOK_RBRACKET: return "]";
+        case CYPHER_TOK_LBRACE: return "{";
+        case CYPHER_TOK_RBRACE: return "}";
+        case CYPHER_TOK_DASH: return "-";
+        case CYPHER_TOK_ARROW_RIGHT: return "->";
+        case CYPHER_TOK_ARROW_LEFT: return "<-";
+        case CYPHER_TOK_ARROW_BOTH: return "<->";
+        case CYPHER_TOK_PIPE: return "|";
+        case CYPHER_TOK_REGEX: return "=~";
+        case CYPHER_TOK_DOLLAR: return "$";
+        case CYPHER_TOK_INTEGER: return "INTEGER";
+        case CYPHER_TOK_FLOAT: return "FLOAT";
+        case CYPHER_TOK_STRING: return "STRING";
+        case CYPHER_TOK_BOOLEAN: return "BOOLEAN";
+        case CYPHER_TOK_IDENTIFIER: return "IDENTIFIER";
+        case CYPHER_TOK_LABEL: return "LABEL";
+        case CYPHER_TOK_PROPERTY: return "PROPERTY";
+        case CYPHER_TOK_REL_TYPE: return "REL_TYPE";
+        default: return "UNKNOWN";
+    }
 }

@@ -19,8 +19,7 @@
 extern const sqlite3_api_routines *sqlite3_api;
 #endif
 
-#include "cypher/cypher-parser.h"
-#include "cypher/cypher-lexer.h"
+#include "cypher.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +33,10 @@ static CypherAst *parsePatternList(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parsePattern(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseNodePattern(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseNodeLabels(CypherLexer *pLexer, CypherParser *pParser);
+static CypherAst *parsePropertyMap(CypherLexer *pLexer, CypherParser *pParser);
+static CypherAst *parseListLiteral(CypherLexer *pLexer, CypherParser *pParser);
+static CypherAst *parseMapLiteral(CypherLexer *pLexer, CypherParser *pParser);
+static CypherAst *parseFunctionCall(CypherLexer *pLexer, CypherParser *pParser, CypherAst *pFunctionName);
 /* static CypherAst *parseRelationshipPattern(CypherLexer *pLexer, CypherParser *pParser); */
 static CypherAst *parseWhereClause(CypherLexer *pLexer, CypherParser *pParser);
 static CypherAst *parseReturnClause(CypherLexer *pLexer, CypherParser *pParser);
@@ -264,6 +267,15 @@ static CypherAst *parseNodePattern(CypherLexer *pLexer, CypherParser *pParser) {
         cypherAstAddChild(pNodePattern, pLabels);
     }
 
+    // Check for property map
+    CypherToken *pBrace = parserPeekToken(pLexer);
+    if (pBrace && pBrace->type == CYPHER_TOK_LBRACE) {
+        CypherAst *pProperties = parsePropertyMap(pLexer, pParser);
+        if (pProperties) {
+            cypherAstAddChild(pNodePattern, pProperties);
+        }
+    }
+
     if (!parserConsumeToken(pLexer, CYPHER_TOK_RPAREN)) {
         parserSetError(pParser, pLexer, "Expected )");
         cypherAstDestroy(pNodePattern);
@@ -285,6 +297,69 @@ static CypherAst *parseNodeLabels(CypherLexer *pLexer, CypherParser *pParser) {
         return NULL;
     }
     return cypherAstCreateNodeLabel(pLabel->text, pLabel->line, pLabel->column);
+}
+
+static CypherAst *parsePropertyMap(CypherLexer *pLexer, CypherParser *pParser) {
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_LBRACE)) {
+        return NULL;
+    }
+    
+    CypherAst *pMap = cypherAstCreate(CYPHER_AST_MAP, 0, 0);
+    
+    // Handle empty map
+    CypherToken *pRBrace = parserPeekToken(pLexer);
+    if (pRBrace && pRBrace->type == CYPHER_TOK_RBRACE) {
+        parserConsumeToken(pLexer, CYPHER_TOK_RBRACE);
+        return pMap;
+    }
+    
+    // Parse property pairs
+    do {
+        // Parse key (identifier)
+        CypherToken *pKey = parserConsumeToken(pLexer, CYPHER_TOK_IDENTIFIER);
+        if (!pKey) {
+            parserSetError(pParser, pLexer, "Expected property name");
+            cypherAstDestroy(pMap);
+            return NULL;
+        }
+        
+        // Parse colon
+        if (!parserConsumeToken(pLexer, CYPHER_TOK_COLON)) {
+            parserSetError(pParser, pLexer, "Expected ':' after property name");
+            cypherAstDestroy(pMap);
+            return NULL;
+        }
+        
+        // Parse value - support expressions
+        CypherAst *pValue = parseExpression(pLexer, pParser);
+        if (!pValue) {
+            parserSetError(pParser, pLexer, "Expected property value expression");
+            cypherAstDestroy(pMap);
+            return NULL;
+        }
+        
+        // Create property pair
+        CypherAst *pPair = cypherAstCreate(CYPHER_AST_PROPERTY_PAIR, pKey->line, pKey->column);
+        cypherAstSetValue(pPair, pKey->text);
+        cypherAstAddChild(pPair, pValue);
+        cypherAstAddChild(pMap, pPair);
+        
+        // Check for comma
+        CypherToken *pComma = parserPeekToken(pLexer);
+        if (pComma && pComma->type == CYPHER_TOK_COMMA) {
+            parserConsumeToken(pLexer, CYPHER_TOK_COMMA);
+        } else {
+            break;
+        }
+    } while (1);
+    
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_RBRACE)) {
+        parserSetError(pParser, pLexer, "Expected '}' to close property map");
+        cypherAstDestroy(pMap);
+        return NULL;
+    }
+    
+    return pMap;
 }
 
 /* Currently unused - reserved for future relationship pattern parsing
@@ -439,7 +514,9 @@ static CypherAst *parseComparisonExpression(CypherLexer *pLexer, CypherParser *p
     CypherToken *pToken = parserPeekToken(pLexer);
     while (           pToken->type == CYPHER_TOK_EQ || pToken->type == CYPHER_TOK_NE ||
            pToken->type == CYPHER_TOK_LT || pToken->type == CYPHER_TOK_LE ||
-           pToken->type == CYPHER_TOK_GT || pToken->type == CYPHER_TOK_GE) {
+           pToken->type == CYPHER_TOK_GT || pToken->type == CYPHER_TOK_GE ||
+           pToken->type == CYPHER_TOK_STARTS_WITH || pToken->type == CYPHER_TOK_ENDS_WITH ||
+           pToken->type == CYPHER_TOK_CONTAINS || pToken->type == CYPHER_TOK_IN) {
         parserConsumeToken(pLexer, pToken->type);
         CypherAst *pRight = parseAdditiveExpression(pLexer, pParser);
         if (!pRight) {
@@ -523,6 +600,13 @@ static CypherAst *parseUnaryExpression(CypherLexer *pLexer, CypherParser *pParse
 static CypherAst *parsePrimaryExpression(CypherLexer *pLexer, CypherParser *pParser) {
     CypherAst *pExpr = parseLiteral(pLexer, pParser);
     if (pExpr) {
+        // Check if this is a function call (identifier followed by parentheses)
+        if (pExpr->type == CYPHER_AST_IDENTIFIER && parserPeekToken(pLexer)->type == CYPHER_TOK_LPAREN) {
+            CypherAst *pFunctionCall = parseFunctionCall(pLexer, pParser, pExpr);
+            if (pFunctionCall) {
+                return parsePropertyExpression(pLexer, pParser, pFunctionCall);
+            }
+        }
         return parsePropertyExpression(pLexer, pParser, pExpr);
     }
     return NULL;
@@ -548,11 +632,193 @@ static CypherAst *parsePropertyExpression(CypherLexer *pLexer, CypherParser *pPa
 }
 
 static CypherAst *parseLiteral(CypherLexer *pLexer, CypherParser *pParser) {
-    (void)pParser; /* Unused parameter */
     CypherToken *pToken = parserPeekToken(pLexer);
-    if (pToken->type == CYPHER_TOK_IDENTIFIER || pToken->type == CYPHER_TOK_INTEGER || pToken->type == CYPHER_TOK_FLOAT || pToken->type == CYPHER_TOK_STRING || pToken->type == CYPHER_TOK_BOOLEAN || pToken->type == CYPHER_TOK_NULL) {
+    
+    // Handle list literals [1, 2, 3]
+    if (pToken->type == CYPHER_TOK_LBRACKET) {
+        return parseListLiteral(pLexer, pParser);
+    }
+    
+    // Handle map literals {key: value}
+    if (pToken->type == CYPHER_TOK_LBRACE) {
+        return parseMapLiteral(pLexer, pParser);
+    }
+    
+    // Handle parenthesized expressions
+    if (pToken->type == CYPHER_TOK_LPAREN) {
+        parserConsumeToken(pLexer, CYPHER_TOK_LPAREN);
+        CypherAst *pExpr = parseExpression(pLexer, pParser);
+        if (!pExpr) return NULL;
+        if (!parserConsumeToken(pLexer, CYPHER_TOK_RPAREN)) {
+            cypherAstDestroy(pExpr);
+            parserSetError(pParser, pLexer, "Expected closing parenthesis");
+            return NULL;
+        }
+        return pExpr;
+    }
+    
+    // Handle identifiers separately from literals
+    if (pToken->type == CYPHER_TOK_IDENTIFIER) {
+        pToken = cypherLexerNextToken(pLexer);
+        return cypherAstCreateIdentifier(pToken->text, pToken->line, pToken->column);
+    }
+    
+    // Handle basic literals
+    if (pToken->type == CYPHER_TOK_INTEGER || pToken->type == CYPHER_TOK_FLOAT || 
+        pToken->type == CYPHER_TOK_STRING || pToken->type == CYPHER_TOK_BOOLEAN || 
+        pToken->type == CYPHER_TOK_NULL) {
         pToken = cypherLexerNextToken(pLexer);
         return cypherAstCreateLiteral(pToken->text, pToken->line, pToken->column);
     }
+    
     return NULL;
+}
+
+static CypherAst *parseListLiteral(CypherLexer *pLexer, CypherParser *pParser) {
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_LBRACKET)) {
+        return NULL;
+    }
+    
+    CypherAst *pList = cypherAstCreate(CYPHER_AST_ARRAY, 0, 0);
+    
+    // Handle empty list []
+    CypherToken *pToken = parserPeekToken(pLexer);
+    if (pToken->type == CYPHER_TOK_RBRACKET) {
+        parserConsumeToken(pLexer, CYPHER_TOK_RBRACKET);
+        return pList;
+    }
+    
+    // Parse list elements
+    do {
+        CypherAst *pElement = parseExpression(pLexer, pParser);
+        if (!pElement) {
+            cypherAstDestroy(pList);
+            parserSetError(pParser, pLexer, "Expected expression in list");
+            return NULL;
+        }
+        cypherAstAddChild(pList, pElement);
+        
+        pToken = parserPeekToken(pLexer);
+        if (pToken->type == CYPHER_TOK_COMMA) {
+            parserConsumeToken(pLexer, CYPHER_TOK_COMMA);
+        } else {
+            break;
+        }
+    } while (1);
+    
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_RBRACKET)) {
+        cypherAstDestroy(pList);
+        parserSetError(pParser, pLexer, "Expected closing bracket");
+        return NULL;
+    }
+    
+    return pList;
+}
+
+static CypherAst *parseMapLiteral(CypherLexer *pLexer, CypherParser *pParser) {
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_LBRACE)) {
+        return NULL;
+    }
+    
+    CypherAst *pMap = cypherAstCreate(CYPHER_AST_OBJECT, 0, 0);
+    
+    // Handle empty map {}
+    CypherToken *pToken = parserPeekToken(pLexer);
+    if (pToken->type == CYPHER_TOK_RBRACE) {
+        parserConsumeToken(pLexer, CYPHER_TOK_RBRACE);
+        return pMap;
+    }
+    
+    // Parse key-value pairs
+    do {
+        // Parse key (identifier or string)
+        pToken = parserPeekToken(pLexer);
+        if (pToken->type != CYPHER_TOK_IDENTIFIER && pToken->type != CYPHER_TOK_STRING) {
+            cypherAstDestroy(pMap);
+            parserSetError(pParser, pLexer, "Expected property name");
+            return NULL;
+        }
+        pToken = cypherLexerNextToken(pLexer);
+        CypherAst *pKey = cypherAstCreateLiteral(pToken->text, pToken->line, pToken->column);
+        
+        // Expect colon
+        if (!parserConsumeToken(pLexer, CYPHER_TOK_COLON)) {
+            cypherAstDestroy(pMap);
+            cypherAstDestroy(pKey);
+            parserSetError(pParser, pLexer, "Expected colon after property name");
+            return NULL;
+        }
+        
+        // Parse value
+        CypherAst *pValue = parseExpression(pLexer, pParser);
+        if (!pValue) {
+            cypherAstDestroy(pMap);
+            cypherAstDestroy(pKey);
+            parserSetError(pParser, pLexer, "Expected expression after colon");
+            return NULL;
+        }
+        
+        // Create property pair
+        CypherAst *pPair = cypherAstCreate(CYPHER_AST_PROPERTY_PAIR, 0, 0);
+        cypherAstAddChild(pPair, pKey);
+        cypherAstAddChild(pPair, pValue);
+        cypherAstAddChild(pMap, pPair);
+        
+        pToken = parserPeekToken(pLexer);
+        if (pToken->type == CYPHER_TOK_COMMA) {
+            parserConsumeToken(pLexer, CYPHER_TOK_COMMA);
+        } else {
+            break;
+        }
+    } while (1);
+    
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_RBRACE)) {
+        cypherAstDestroy(pMap);
+        parserSetError(pParser, pLexer, "Expected closing brace");
+        return NULL;
+    }
+    
+    return pMap;
+}
+
+static CypherAst *parseFunctionCall(CypherLexer *pLexer, CypherParser *pParser, CypherAst *pFunctionName) {
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_LPAREN)) {
+        return NULL;
+    }
+    
+    CypherAst *pFunctionCall = cypherAstCreate(CYPHER_AST_FUNCTION_CALL, 0, 0);
+    cypherAstAddChild(pFunctionCall, pFunctionName);
+    
+    // Handle empty function call func()
+    CypherToken *pToken = parserPeekToken(pLexer);
+    if (pToken->type == CYPHER_TOK_RPAREN) {
+        parserConsumeToken(pLexer, CYPHER_TOK_RPAREN);
+        return pFunctionCall;
+    }
+    
+    // Parse function arguments
+    do {
+        CypherAst *pArg = parseExpression(pLexer, pParser);
+        if (!pArg) {
+            cypherAstDestroy(pFunctionCall);
+            parserSetError(pParser, pLexer, "Expected expression in function call");
+            return NULL;
+        }
+        cypherAstAddChild(pFunctionCall, pArg);
+        
+        pToken = parserPeekToken(pLexer);
+        if (pToken->type == CYPHER_TOK_COMMA) {
+            parserConsumeToken(pLexer, CYPHER_TOK_COMMA);
+        } else {
+            break;
+        }
+    } while (1);
+    
+    if (!parserConsumeToken(pLexer, CYPHER_TOK_RPAREN)) {
+        cypherAstDestroy(pFunctionCall);
+        parserSetError(pParser, pLexer, "Expected closing parenthesis");
+        return NULL;
+    }
+    
+    return pFunctionCall;
 }

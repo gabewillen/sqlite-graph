@@ -2,7 +2,7 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -I. -I../include -I../_deps/sqlite-src -I../_deps/Unity-2.5.2/src -I./src -g -O0 -std=gnu99 -fPIC
+CFLAGS = -I. -I../include -I../_deps/sqlite-src -I../_deps/Unity-2.5.2/src -I./src -g -O0 -std=gnu99 -fPIC -Wall -Wextra -Werror
 CFLAGS += $(EXTRA_CFLAGS)
 LDFLAGS = -lm
 
@@ -10,8 +10,10 @@ LDFLAGS = -lm
 BUILD_DIR = ../build
 OBJ_DIR = $(BUILD_DIR)/obj/src
 
-# Source files
-SRCS = $(filter-out cypher/cypher-executor.c, $(filter-out cypher/cypher-executor-sql.c, $(filter-out cypher/cypher-planner-sql.c, $(filter-out cypher/cypher-sql.c, $(wildcard *.c) $(wildcard cypher/*.c)))))
+# Source files - include all C files except problematic ones  
+SRCS = $(filter-out cypher/cypher-sql.c, $(wildcard *.c) $(wildcard cypher/*.c))
+# Add the fixed cypher SQL functions
+SRCS += cypher/cypher-sql-fixed.c
 # Add graph-advanced.c to SRCS to ensure its object file is included in main libraries
 SRCS += graph-advanced.c
 SRCS += cypher/cypher-ast.c

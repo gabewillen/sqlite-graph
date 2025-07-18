@@ -107,6 +107,18 @@ const char *cypherAstNodeTypeName(CypherAstNodeType type) {
     case CYPHER_AST_LIST:            return "LIST";
     case CYPHER_AST_FUNCTION_CALL:   return "FUNCTION_CALL";
     case CYPHER_AST_CASE:            return "CASE";
+    case CYPHER_AST_PROPERTY_PAIR:   return "PROPERTY_PAIR";
+    case CYPHER_AST_AND:             return "AND";
+    case CYPHER_AST_NOT:             return "NOT";
+    case CYPHER_AST_COMPARISON:      return "COMPARISON";
+    case CYPHER_AST_ADDITIVE:        return "ADDITIVE";
+    case CYPHER_AST_MULTIPLICATIVE:  return "MULTIPLICATIVE";
+    case CYPHER_AST_ARRAY:           return "ARRAY";
+    case CYPHER_AST_OBJECT:          return "OBJECT";
+    case CYPHER_AST_STARTS_WITH:     return "STARTS_WITH";
+    case CYPHER_AST_ENDS_WITH:       return "ENDS_WITH";
+    case CYPHER_AST_CONTAINS_OP:     return "CONTAINS_OP";
+    case CYPHER_AST_REGEX:           return "REGEX";
     case CYPHER_AST_COUNT:           return "COUNT";
     default:                         return "UNKNOWN";
   }

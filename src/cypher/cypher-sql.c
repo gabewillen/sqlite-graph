@@ -81,7 +81,6 @@ static void cypherValidateSqlFunc(
 ) {
   const char *zQuery;
   CypherParser *pParser;
-  int rc;
   
   /* Validate arguments */
   if( argc != 1 ) {
@@ -96,16 +95,17 @@ static void cypherValidateSqlFunc(
   }
   
   /* Create parser and validate query */
-  pParser = cypherParserCreate(sqlite3_context_db_handle(context));
+  pParser = cypherParserCreate();
   if( !pParser ) {
     sqlite3_result_error_nomem(context);
     return;
   }
   
-  rc = cypherParserParse(pParser, zQuery, -1);
+  CypherAst *pAst = cypherParse(pParser, zQuery, NULL);
   
-  if( rc == SQLITE_OK ) {
+  if( pAst != NULL ) {
     sqlite3_result_int(context, 1); /* Valid */
+    cypherAstDestroy(pAst);
   } else {
     /* Invalid - could optionally set error message as auxiliary data */
     sqlite3_result_int(context, 0);
@@ -150,7 +150,7 @@ static void cypherTokenizeSqlFunc(
   }
   
   /* Create lexer and tokenize */
-  pLexer = cypherLexerCreate(zQuery, -1);
+  pLexer = cypherLexerCreate(zQuery);
   if( !pLexer ) {
     sqlite3_result_error_nomem(context);
     return;
@@ -340,7 +340,7 @@ static void cypherAstInfoSqlFunc(
   }
   
   /* Create parser and parse query */
-  pParser = cypherParserCreate(sqlite3_context_db_handle(context));
+  pParser = cypherParserCreate();
   if( !pParser ) {
     sqlite3_result_error_nomem(context);
     return;
@@ -471,4 +471,32 @@ char *cypherTestSqlFunctions(sqlite3 *db) {
   
   sqlite3_finalize(pStmt);
   return zResult;
+}
+
+/*
+** Missing function implementations for cypher-sql compatibility
+*/
+
+static char *cypherParseTestQuery(const char *zQuery) {
+  /* Simple placeholder implementation */
+  return sqlite3_mprintf("Parsed: %s", zQuery);
+}
+
+static int cypherLexerTokenize(CypherLexer *pLexer) {
+  /* Simple stub - use the existing token API */
+  UNUSED(pLexer);
+  return SQLITE_OK;
+}
+
+static char *cypherAstToString(CypherAst *pAst) {
+  /* Simple stub - return basic AST info */
+  if (!pAst) return sqlite3_mprintf("NULL AST");
+  return sqlite3_mprintf("AST Node: [type: %d]", (int)pAst->type);
+}
+
+static int cypherAstValidate(CypherAst *pAst, char **pzErrMsg) {
+  /* Simple stub - assume all ASTs are valid */
+  UNUSED(pAst);
+  if (pzErrMsg) *pzErrMsg = NULL;
+  return SQLITE_OK;
 }

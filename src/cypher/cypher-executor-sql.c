@@ -60,21 +60,20 @@ static void cypherExecuteSqlFunc(
   }
   
   /* Parse the query */
-  pParser = cypherParserCreate(sqlite3_context_db_handle(context));
+  pParser = cypherParserCreate();
   if( !pParser ) {
     sqlite3_result_error_nomem(context);
     return;
   }
   
-  rc = cypherParserParse(pParser, zQuery, -1);
-  if( rc != SQLITE_OK ) {
-    const char *zError = cypherParserGetError(pParser);
-    sqlite3_result_error(context, zError ? zError : "Parse error", -1);
+  char *zErrMsg = NULL;
+  pAst = cypherParse(pParser, zQuery, &zErrMsg);
+  if( !pAst ) {
+    sqlite3_result_error(context, zErrMsg ? zErrMsg : "Parse error", -1);
+    if (zErrMsg) sqlite3_free(zErrMsg);
     cypherParserDestroy(pParser);
     return;
   }
-  
-  pAst = cypherParserGetAst(pParser);
   if( !pAst ) {
     sqlite3_result_error(context, "No AST generated", -1);
     cypherParserDestroy(pParser);
@@ -188,21 +187,20 @@ static void cypherExecuteExplainSqlFunc(
   }
   
   /* Parse and plan the query (same as cypher_execute) */
-  pParser = cypherParserCreate(sqlite3_context_db_handle(context));
+  pParser = cypherParserCreate();
   if( !pParser ) {
     sqlite3_result_error_nomem(context);
     return;
   }
   
-  rc = cypherParserParse(pParser, zQuery, -1);
-  if( rc != SQLITE_OK ) {
-    const char *zError = cypherParserGetError(pParser);
-    sqlite3_result_error(context, zError ? zError : "Parse error", -1);
+  char *zErrMsg = NULL;
+  pAst = cypherParse(pParser, zQuery, &zErrMsg);
+  if( !pAst ) {
+    sqlite3_result_error(context, zErrMsg ? zErrMsg : "Parse error", -1);
+    if (zErrMsg) sqlite3_free(zErrMsg);
     cypherParserDestroy(pParser);
     return;
   }
-  
-  pAst = cypherParserGetAst(pParser);
   if( !pAst ) {
     sqlite3_result_error(context, "No AST generated", -1);
     cypherParserDestroy(pParser);

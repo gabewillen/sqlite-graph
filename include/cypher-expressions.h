@@ -42,7 +42,11 @@ typedef enum {
     CYPHER_CMP_GREATER,      /* > */
     CYPHER_CMP_GREATER_EQUAL,/* >= */
     CYPHER_CMP_IS_NULL,      /* IS NULL */
-    CYPHER_CMP_IS_NOT_NULL   /* IS NOT NULL */
+    CYPHER_CMP_IS_NOT_NULL,  /* IS NOT NULL */
+    CYPHER_CMP_STARTS_WITH,  /* STARTS WITH */
+    CYPHER_CMP_ENDS_WITH,    /* ENDS WITH */
+    CYPHER_CMP_CONTAINS,     /* CONTAINS */
+    CYPHER_CMP_IN            /* IN */
 } CypherComparisonOp;
 
 /* Logical operators */
@@ -215,5 +219,12 @@ int cypherFunctionLast(CypherValue *apArgs, int nArgs, CypherValue *pResult);
 int cypherFunctionToString(CypherValue *apArgs, int nArgs, CypherValue *pResult);
 int cypherFunctionToInteger(CypherValue *apArgs, int nArgs, CypherValue *pResult);
 int cypherFunctionToFloat(CypherValue *apArgs, int nArgs, CypherValue *pResult);
+
+/* Aggregate functions */
+int cypherFunctionCount(CypherValue *apArgs, int nArgs, CypherValue *pResult);
+int cypherFunctionSum(CypherValue *apArgs, int nArgs, CypherValue *pResult);
+int cypherFunctionAvg(CypherValue *apArgs, int nArgs, CypherValue *pResult);
+int cypherFunctionMin(CypherValue *apArgs, int nArgs, CypherValue *pResult);
+int cypherFunctionMax(CypherValue *apArgs, int nArgs, CypherValue *pResult);
 
 #endif /* CYPHER_EXPRESSIONS_H */

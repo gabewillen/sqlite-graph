@@ -70,7 +70,6 @@ void cypherExecutorDestroy(CypherExecutor *pExecutor) {
 static CypherIterator *createIteratorTree(PhysicalPlanNode *pPlan, ExecutionContext *pContext) {
   CypherIterator *pIterator;
   CypherIterator *pChild;
-  int i;
   
   if( !pPlan ) return NULL;
   
@@ -86,7 +85,7 @@ static CypherIterator *createIteratorTree(PhysicalPlanNode *pPlan, ExecutionCont
       return NULL;
     }
     
-    for( i = 0; i < pPlan->nChildren; i++ ) {
+    for( int i = 0; i < pPlan->nChildren; i++ ) {
       pChild = createIteratorTree(pPlan->apChildren[i], pContext);
       if( !pChild ) {
         /* Clean up partial iterator tree */
@@ -135,9 +134,7 @@ int cypherExecutorPrepare(CypherExecutor *pExecutor, PhysicalPlanNode *pPlan) {
 */
 int cypherExecutorExecute(CypherExecutor *pExecutor, char **pzResults) {
   CypherIterator *pRoot;
-  CypherResult *pResult;
   char *zResultArray = NULL;
-  char *zRowJson;
   int nResults = 0;
   int nAllocated = 256;
   int nUsed = 0;
@@ -166,7 +163,7 @@ int cypherExecutorExecute(CypherExecutor *pExecutor, char **pzResults) {
   
   /* Iterate through results */
   while( 1 ) {
-    pResult = cypherResultCreate();
+    CypherResult *pResult = cypherResultCreate();
     if( !pResult ) {
       rc = SQLITE_NOMEM;
       break;
@@ -185,7 +182,7 @@ int cypherExecutorExecute(CypherExecutor *pExecutor, char **pzResults) {
     }
     
     /* Convert result to JSON */
-    zRowJson = cypherResultToJson(pResult);
+    char *zRowJson = cypherResultToJson(pResult);
     cypherResultDestroy(pResult);
     
     if( !zRowJson ) {
@@ -291,13 +288,10 @@ char *cypherExecuteTestQuery(sqlite3 *pDb, const char *zQuery) {
   if( !zQuery ) return NULL;
   
   /* Parse query */
-  pParser = cypherParserCreate(pDb);
+  pParser = cypherParserCreate();
   if( !pParser ) goto cleanup;
   
-  rc = cypherParserParse(pParser, zQuery, -1);
-  if( rc != SQLITE_OK ) goto cleanup;
-  
-  pAst = cypherParserGetAst(pParser);
+  pAst = cypherParse(pParser, zQuery, NULL);
   if( !pAst ) goto cleanup;
   
   /* Plan query */
@@ -411,7 +405,8 @@ static double getTimeMs(void) {
 */
 int cypherExecutorExecuteWithStats(CypherExecutor *pExecutor, char **pzResults, char **pzStats) {
   double startTime, endTime;
-  int rc, nResults = 0;
+  int rc;
+  int nResults = 0;
   sqlite3_int64 nRowsScanned = 0, nRowsReturned = 0;
   char *zResults = NULL;
   

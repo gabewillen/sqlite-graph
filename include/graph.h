@@ -59,8 +59,6 @@ struct GraphEdge {
 ** Forward declarations for schema structures
 */
 typedef struct CypherSchema CypherSchema;
-typedef struct GraphIndex GraphIndex;
-typedef struct GraphPropertySchema GraphPropertySchema;
 
 /*
 ** Enhanced graph virtual table structure with schema and indexing support.
@@ -74,8 +72,8 @@ struct GraphVtab {
   char *zDbName;          /* Database name ("main", "temp", etc.) */
   char *zTableName;       /* Name of the virtual table */
   int nRef;               /* Reference count */
-  GraphIndex *pLabelIndex;  /* Label-based node index */
-  GraphIndex *pPropertyIndex; /* Property-based index */
+  void *pLabelIndex;  /* Label-based node index */
+  void *pPropertyIndex; /* Property-based index */
   CypherSchema *pSchema;  /* Schema information for labels/types */
 };
 
@@ -316,48 +314,9 @@ int graphConnectedComponents(GraphVtab *pVtab, char **pzComponents);
 int graphStronglyConnectedComponents(GraphVtab *pVtab, char **pzSCC);
 
 /*
-** Enhanced data model structures for Cypher schema support.
-*/
-
-/*
-** Cypher schema tracking for labels and relationship types.
-** Maintains metadata about graph structure for optimization.
-*/
-struct CypherSchema {
-  char **azNodeLabels;    /* Array of known node labels */
-  int nNodeLabels;        /* Number of node labels */
-  char **azRelTypes;      /* Array of known relationship types */
-  int nRelTypes;          /* Number of relationship types */
-  GraphPropertySchema *pPropSchema; /* Property schemas by label/type */
-};
-
-/*
-** Index structures for efficient pattern matching.
-** Hash-based indexing for O(1) label and property lookups.
-*/
-struct GraphIndex {
-  char *zIndexName;       /* Index name */
-  int iIndexType;         /* 0=label, 1=property, 2=composite */
-  GraphNode **apNodes;    /* Hash table of nodes */
-  int nBuckets;           /* Number of hash buckets */
-  int nEntries;           /* Number of indexed entries */
-};
-
-/*
-** Property schema information for type inference and optimization.
-** Tracks property types and frequency for each label/relationship type.
-*/
-struct GraphPropertySchema {
-  char *zLabelOrType;     /* Label or relationship type name */
-  char **azProperties;    /* Array of property names */
-  int *aiPropertyTypes;   /* Array of SQLite type codes */
-  int nProperties;        /* Number of properties */
-  GraphPropertySchema *pNext; /* Next schema in linked list */
-};
-
-/*
 ** Enhanced storage functions with label and type support.
 ** These extend the existing API with Cypher graph concepts.
+** For full Cypher functionality, include cypher/cypher-api.h
 */
 
 /*
@@ -378,84 +337,6 @@ int graphAddEdgeWithType(GraphVtab *pVtab, sqlite3_int64 iFromId,
                          double rWeight, const char *zProperties);
 
 /*
-** Set or update labels for an existing node.
-** Replaces existing labels with new ones.
-*/
-int graphSetNodeLabels(GraphVtab *pVtab, sqlite3_int64 iNodeId,
-                       const char **azLabels, int nLabels);
-
-/*
-** Add a single label to an existing node.
-** Does not replace existing labels.
-*/
-int graphAddNodeLabel(GraphVtab *pVtab, sqlite3_int64 iNodeId,
-                      const char *zLabel);
-
-/*
-** Remove a specific label from a node.
-*/
-int graphRemoveNodeLabel(GraphVtab *pVtab, sqlite3_int64 iNodeId,
-                         const char *zLabel);
-
-/*
-** Get all labels for a node as a JSON array.
-** Caller must sqlite3_free() the returned string.
-*/
-int graphGetNodeLabels(GraphVtab *pVtab, sqlite3_int64 iNodeId,
-                       char **pzLabels);
-
-/*
-** Check if a node has a specific label.
-** Returns 1 if node has label, 0 if not, -1 on error.
-*/
-int graphNodeHasLabel(GraphVtab *pVtab, sqlite3_int64 iNodeId,
-                      const char *zLabel);
-
-/*
-** Schema management functions.
-*/
-
-/*
-** Create or get schema structure for virtual table.
-** Initializes schema tracking if not already present.
-*/
-int graphInitSchema(GraphVtab *pVtab);
-
-/*
-** Destroy schema structure and free all memory.
-*/
-void graphDestroySchema(CypherSchema *pSchema);
-
-/*
-** Register a new label in the schema.
-** Returns SQLITE_OK if successful.
-*/
-int graphRegisterLabel(CypherSchema *pSchema, const char *zLabel);
-
-/*
-** Register a new relationship type in the schema.
-*/
-int graphRegisterRelationshipType(CypherSchema *pSchema, const char *zType);
-
-/*
-** Index management functions.
-*/
-
-/*
-** Create a label-based index for fast node lookups.
-** zLabel: Label to index (NULL for all labels)
-*/
-int graphCreateLabelIndex(GraphVtab *pVtab, const char *zLabel);
-
-/*
-** Create a property-based index for fast property lookups.
-** zLabel: Label to index properties for (NULL for all nodes)
-** zProperty: Property name to index
-*/
-int graphCreatePropertyIndex(GraphVtab *pVtab, const char *zLabel,
-                             const char *zProperty);
-
-/*
 ** Find nodes by label using index.
 ** Returns linked list of nodes with specified label.
 */
@@ -466,69 +347,6 @@ GraphNode *graphFindNodesByLabel(GraphVtab *pVtab, const char *zLabel);
 ** Returns linked list of edges with specified type.
 */
 GraphEdge *graphFindEdgesByType(GraphVtab *pVtab, const char *zType);
-
-/*
-** Utility functions for label and type operations.
-*/
-
-/*
-** Hash function for label and property indexing.
-** Simple but effective hash for string keys.
-*/
-unsigned int graphHashString(const char *zString);
-
-/*
-** Compare two label arrays for equality.
-** Returns 1 if equal, 0 if different.
-*/
-int graphLabelsEqual(const char **azLabels1, int nLabels1,
-                     const char **azLabels2, int nLabels2);
-
-/*
-** Copy label array with proper memory allocation.
-** Caller must free returned array and strings.
-*/
-char **graphCopyLabels(const char **azLabels, int nLabels);
-
-/*
-** Free label array allocated by graphCopyLabels.
-*/
-void graphFreeLabels(char **azLabels, int nLabels);
-
-/*
-** Dynamic schema discovery and validation functions.
-*/
-
-/*
-** Discover all labels and relationship types in the current graph.
-** Updates the schema with found labels and types automatically.
-*/
-int graphDiscoverSchema(GraphVtab *pVtab);
-
-/*
-** Get schema information as JSON.
-** Returns schema metadata including labels, types, and statistics.
-** Caller must sqlite3_free() the returned string.
-*/
-int graphGetSchemaInfo(GraphVtab *pVtab, char **pzSchemaInfo);
-
-/*
-** Validate node labels against schema constraints.
-** Returns SQLITE_OK if valid, SQLITE_CONSTRAINT if invalid.
-*/
-int graphValidateNodeLabels(GraphVtab *pVtab, const char **azLabels, int nLabels);
-
-/*
-** Validate relationship type against schema constraints.
-** Returns SQLITE_OK if valid, SQLITE_CONSTRAINT if invalid.
-*/
-int graphValidateRelationshipType(GraphVtab *pVtab, const char *zType);
-
-/*
-** Rebuild all indexes after schema changes.
-** This is a potentially expensive operation for large graphs.
-*/
-int graphRebuildIndexes(GraphVtab *pVtab);
 
 /*
 ** Thread-safe global graph access functions.

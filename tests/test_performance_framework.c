@@ -11,6 +11,7 @@
 #include "../include/graph-vtab.h"
 #include <time.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef struct {
   const char *name;
@@ -59,20 +60,6 @@ static void setupPerfTests(void) {
 
 static void teardownPerfTests(void) {
   if (pVtab) {
-    while (pVtab->pNodeList) {
-      GraphNode *pNode = pVtab->pNodeList;
-      pVtab->pNodeList = pNode->pNext;
-      sqlite3_free(pNode->zProperties);
-      sqlite3_free(pNode);
-    }
-    
-    while (pVtab->pEdgeList) {
-      GraphEdge *pEdge = pVtab->pEdgeList;
-      pVtab->pEdgeList = pEdge->pNext;
-      sqlite3_free(pEdge->zProperties);
-      sqlite3_free(pEdge);
-    }
-    
     sqlite3_free(pVtab->zDbName);
     sqlite3_free(pVtab->zTableName);
     sqlite3_free(pVtab);

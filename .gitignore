@@ -1,66 +1,78 @@
-# Build directories
+# Build artifacts
 build/
-cmake-build-*/
-out/
-
-# Test executables (should not be in source tree)
-tests/test_cypher_basic
-tests/test_planner_compile
-tests/test_executor_compile
-tests/test_write_simple
-tests/test_merge_simple
-tests/test_write_comprehensive
-tests/test_transaction_complete
-tests/test_tck_basic
-
-# Coverage files
-*.gcda
-*.gcno
-*.gcov
-coverage.info
-coverage/
-coverage_report/
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Compiled files
+obj/
 *.o
 *.so
-*.dylib
-*.dll
 *.a
-*.lib
-*.exe
+*.dll
+*.dylib
 
-# CMake files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-CTestTestfile.cmake
-Testing/
+# Test executables
+test_*
+simple_test
+simple_string_test
+debug_test
 
-# Performance test results
+# Build directories
+build/
+obj/
+
+# Coverage reports
+coverage/
+*.gcno
+*.gcda
+*.gcov
+
+# Performance and analysis results
 perf_results/
-*.db
+analysis_results/
+security_audit/
+self_review_verification/
 
-# Documentation build
-docs/_build/
-docs/html/
-
-# Python
-__pycache__/
-*.pyc
+# Memory debugging
+*.txt
+helgrind_results.txt
+memory_leak_report.txt
+allocs.txt
+frees.txt
 
 # Temporary files
 *.tmp
 *.temp
+*~
+.DS_Store
+.vscode/
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Backup files
+*_backup/
+src_backup/
+
+# Log files
 *.log
+test_output.txt
+
+# IDE files
+compile_commands.json
+
+# Developer-specific files and directories
+.claude/
+.gemini/
+.opencode/
+AGENT.md
+plan.md
+progress.md
+fix-phase-*.md
+*_backup.*
+COMPLETION_PLAN.md
+IMPLEMENTATION_*.md
+SELF_REVIEW.md
+virtual_tables_explanation.md
+
+# Coverage reports
+coverage_report.*

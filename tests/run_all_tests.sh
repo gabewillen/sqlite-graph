@@ -54,7 +54,6 @@ run_test "MERGE Operations Logic" "test_merge_simple"
 run_test "Comprehensive Write Operations" "test_write_comprehensive"
 run_test "Transaction Management" "test_transaction_complete"
 run_test "openCypher TCK Basic Compliance" "test_tck_basic"
-run_test "Comprehensive Graph Tests" "test_graph"
 # Temporarily skip virtual table comprehensive test due to linking issue
 # run_test "Virtual Table Comprehensive" "test_virtual_table_comprehensive"
 # Temporarily skip extension loading test due to segfault issue

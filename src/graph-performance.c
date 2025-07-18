@@ -56,13 +56,13 @@ SelectivityEstimate graphEstimateSelectivity(GraphVtab *pGraph,
     }
     sqlite3_finalize(pStmt);
     
+    /* Initialize estimate */
+    estimate.selectivity = 1.0;
+    
     /* Use edge statistics in selectivity calculation */
     if (totalEdges > 0) {
         estimate.selectivity *= 0.8; /* Adjust based on edge density */
     }
-    
-    /* Initialize estimate */
-    estimate.selectivity = 1.0;
     estimate.estimatedRows = totalNodes;
     estimate.confidence = 50;
     
