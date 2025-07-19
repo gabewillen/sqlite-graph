@@ -1,0 +1,180 @@
+# tests/Makefile - Comprehensive Test Build System
+# Builds every test source into individual executables with fail-fast error handling
+
+# Compiler and flags
+CC = gcc
+CFLAGS = -I../include -I../src -I../_deps/sqlite-src -I../_deps/Unity-2.5.2/src -I../include/cypher -g -O0 -std=gnu99
+# Ensure SQLite extension support is enabled
+CFLAGS += -DSQLITE_ENABLE_LOAD_EXTENSION=1
+LDFLAGS = -L../build -lgraph_static -lgraph_test_util -lsqlite3 -lunity -lm -ldl -lpthread
+
+# Directories
+BUILD_DIR = ../build
+OBJ_DIR = $(BUILD_DIR)/obj/tests
+TEST_EXEC_DIR = $(BUILD_DIR)/tests
+
+# Collect ALL test source files automatically
+ALL_TEST_SOURCES = $(wildcard test_*.c simple*.c tck_*.c)
+
+# Filter out utility files that aren't standalone tests
+UTILITY_SOURCES = test_database_utils.c
+
+# Tests that are standalone executables (automatically detected)
+STANDALONE_TEST_SOURCES = $(filter-out $(UTILITY_SOURCES), $(ALL_TEST_SOURCES))
+
+# Generate test names by removing .c extension
+ALL_TESTS = $(basename $(STANDALONE_TEST_SOURCES))
+
+# Tests that need additional source files (multi-source tests)
+MULTI_SOURCE_TESTS = test_extension_loading test_virtual_table_comprehensive
+
+# Default target builds all tests with fail-fast error handling
+.PHONY: all clean test rebuild full help individual additional tck
+.PHONY: compile-all compile-fail-fast debug list-sources
+
+all: compile-all
+
+# Build all tests with fail-fast error handling - STOPS ON FIRST ERROR
+compile-all: $(addprefix $(TEST_EXEC_DIR)/,$(ALL_TESTS))
+	@echo "=== ALL TESTS COMPILED SUCCESSFULLY ==="
+	@echo "Total tests built: $(words $(ALL_TESTS))"
+	@echo ""
+	@echo "Available test executables:"
+	@for test in $(ALL_TESTS); do echo "  $(TEST_EXEC_DIR)/$$test"; done
+
+compile-fail-fast: compile-all
+
+# Create directories
+$(TEST_EXEC_DIR):
+	@mkdir -p $@
+
+$(OBJ_DIR):
+	@mkdir -p $@
+
+# Default rule for single-source tests - FAIL IMMEDIATELY ON ANY ERROR
+$(TEST_EXEC_DIR)/%: %.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
+	@echo "Building test executable: $@"
+	@if ! $(CC) $(CFLAGS) $< -o $@ $(LDFLAGS); then \
+		echo "ERROR: Failed to build $@ from $<"; \
+		echo "This build uses FAIL-FAST: Any compilation or linking error stops the entire build."; \
+		exit 1; \
+	fi
+
+# Special rules for multi-source tests - FAIL IMMEDIATELY ON ANY ERROR
+$(TEST_EXEC_DIR)/test_extension_loading: test_extension_loading.c test_database_utils.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
+	@echo "Building multi-source test: $@"
+	@if ! $(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS); then \
+		echo "ERROR: Failed to build $@"; \
+		echo "This build uses FAIL-FAST: Any compilation or linking error stops the entire build."; \
+		exit 1; \
+	fi
+
+$(TEST_EXEC_DIR)/test_virtual_table_comprehensive: test_virtual_table_comprehensive.c test_database_utils.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
+	@echo "Building multi-source test: $@"
+	@if ! $(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS); then \
+		echo "ERROR: Failed to build $@"; \
+		echo "This build uses FAIL-FAST: Any compilation or linking error stops the entire build."; \
+		exit 1; \
+	fi
+
+# Special case for tck_main which needs additional includes - FAIL IMMEDIATELY ON ANY ERROR
+$(TEST_EXEC_DIR)/tck_main: tck_main.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
+	@echo "Building TCK test: $@"
+	@if ! $(CC) $(CFLAGS) -I../tck $< -o $@ $(LDFLAGS); then \
+		echo "ERROR: Failed to build $@"; \
+		echo "This build uses FAIL-FAST: Any compilation or linking error stops the entire build."; \
+		exit 1; \
+	fi
+
+# Backward compatibility targets
+individual: $(addprefix $(TEST_EXEC_DIR)/,test_cypher_basic test_planner_compile test_executor_compile test_write_simple test_merge_simple test_write_comprehensive)
+
+additional: $(addprefix $(TEST_EXEC_DIR)/,test_cypher_lexer test_cypher_parser test_cypher_ast test_extension_loading test_virtual_table_comprehensive test_graph_updates)
+
+# TCK target - builds and runs all TCK tests with extension support
+tck: $(addprefix $(TEST_EXEC_DIR)/,tck_main)
+	@echo "=== Running TCK Test Suite ==="
+	$(TEST_EXEC_DIR)/tck_main
+
+full: compile-all
+
+# Run tests using the existing script
+test: compile-all
+	@echo "Running tests using existing script..."
+	cd .. && tests/run_all_tests.sh
+
+# Debug target to show what tests would be built
+debug: list-sources
+	@echo ""
+	@echo "Build configuration:"
+	@echo "  Total tests to build: $(words $(ALL_TESTS))"
+	@echo "  Multi-source tests: $(MULTI_SOURCE_TESTS)"
+	@echo "  Build mode: FAIL-FAST (stops on first error)"
+
+list-sources:
+	@echo "All test sources found:"
+	@for src in $(ALL_TEST_SOURCES); do echo "  $$src"; done
+	@echo ""
+	@echo "Utility sources (not standalone):"
+	@for src in $(UTILITY_SOURCES); do echo "  $$src"; done
+	@echo ""
+	@echo "Standalone test executables to build:"
+	@for test in $(ALL_TESTS); do echo "  $$test"; done
+
+rebuild: clean compile-all
+
+clean:
+	rm -rf $(TEST_EXEC_DIR)
+	rm -rf $(OBJ_DIR)
+
+# Help target
+help:
+	@echo "SQLite Graph Extension - Comprehensive Test Build System"
+	@echo "========================================================"
+	@echo ""
+	@echo "This Makefile builds ALL test sources into individual executables"
+	@echo "using FAIL-FAST error handling - the build stops immediately"
+	@echo "when any single test fails to compile or link."
+	@echo ""
+	@echo "Available targets:"
+	@echo "  all         - Build all tests (default, fail-fast)"
+	@echo "  compile-all - Build all tests with immediate failure on any error"
+	@echo "  individual  - Build core individual tests (backward compatibility)"
+	@echo "  additional  - Build additional tests (backward compatibility)"  
+	@echo "  tck         - Build and run TCK test suite"
+	@echo "  full        - Build all tests (alias for compile-all)"
+	@echo "  test        - Build and run tests using run_all_tests.sh"
+	@echo "  debug       - Show what tests would be built"
+	@echo "  list-sources- Show all test source files"
+	@echo "  clean       - Clean build files"
+	@echo "  rebuild     - Clean and build all tests"
+	@echo ""
+	@echo "Build Statistics:"
+	@echo "  Total tests found: $(words $(ALL_TESTS))"
+	@echo "  Test source files: $(words $(ALL_TEST_SOURCES))"
+	@echo "  Multi-source tests: $(words $(MULTI_SOURCE_TESTS))"
+
+# TCK Coverage targets
+.PHONY: tck-coverage tck-report tck-generate
+
+tck-coverage: coverage.json
+	@python3 ../scripts/update_compliance.py
+
+tck-report: tck-coverage
+	@echo "=== TCK Compliance Report ==="
+	@jq -r '"Total Scenarios: " + (.statistics.total_scenarios | tostring)' coverage.json
+	@jq -r '"Passed: " + (.statistics.passed | tostring)' coverage.json  
+	@jq -r '"Failed: " + (.statistics.failed | tostring)' coverage.json
+	@jq -r '"Skipped: " + (.statistics.skipped | tostring)' coverage.json
+	@jq -r '"Pending: " + (.statistics.pending | tostring)' coverage.json
+	@jq -r '"Compliance: " + (.statistics.compliance_percentage | tostring) + "%"' coverage.json
+	@echo "=== High Priority Pending ==="
+	@jq -r '.scenarios[] | select(.status == "pending" and .priority == "high") | .unity_test_function' coverage.json | head -10
+
+tck-generate:
+	@python3 ../scripts/generate_unity_tests.py
+
+# Update coverage after running tests
+update-coverage:
+	@python3 ../scripts/update_compliance.py > /dev/null
+	@echo "Coverage updated: $$(jq -r '.statistics.compliance_percentage' coverage.json)%"

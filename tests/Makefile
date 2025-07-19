@@ -1,62 +1,49 @@
-# tests/Makefile
+# tests/Makefile - Comprehensive Test Build System
+# Builds every test source into individual executables with fail-fast error handling
 
 # Compiler and flags
 CC = gcc
 CFLAGS = -I../include -I../src -I../_deps/sqlite-src -I../_deps/Unity-2.5.2/src -I../include/cypher -g -O0 -std=gnu99
 # Ensure SQLite extension support is enabled
 CFLAGS += -DSQLITE_ENABLE_LOAD_EXTENSION=1
-LDFLAGS = -L../build -lgraph_static -lgraph_test_util -lsqlite3 -lunity -lm -ldl -lpthread
+LDFLAGS = -L../build -lgraph_static -lunity -lsqlite3 -lm -ldl -lpthread
 
 # Directories
 BUILD_DIR = ../build
 OBJ_DIR = $(BUILD_DIR)/obj/tests
 TEST_EXEC_DIR = $(BUILD_DIR)/tests
 
-# Test executables we want to build individually (based on run_all_tests.sh)
-INDIVIDUAL_TESTS = test_cypher_basic test_planner_compile test_executor_compile \
-                  test_write_simple test_merge_simple test_write_comprehensive \
+# Collect ALL test source files automatically
+ALL_TEST_SOURCES = $(wildcard test_*.c simple*.c tck_*.c)
 
-# Additional tests that can be built
-ADDITIONAL_TESTS = test_cypher_lexer test_cypher_parser test_cypher_ast \
-                  test_extension_loading test_virtual_table_comprehensive \
-                  test_graph_updates
+# Filter out utility files that aren't standalone tests
+UTILITY_SOURCES = test_database_utils.c
 
-# TCK specific tests
-TCK_TESTS = tck_main
+# Tests that are standalone executables (automatically detected)
+STANDALONE_TEST_SOURCES = $(filter-out $(UTILITY_SOURCES), $(ALL_TEST_SOURCES))
 
-# All test executables
-ALL_TESTS = $(INDIVIDUAL_TESTS) $(ADDITIONAL_TESTS) $(TCK_TESTS)
+# Generate test names by removing .c extension
+ALL_TESTS = $(basename $(STANDALONE_TEST_SOURCES))
 
-# Default target builds all individual tests
-.PHONY: all clean test rebuild individual additional tck
+# Tests that need additional source files (multi-source tests)
+MULTI_SOURCE_TESTS = test_extension_loading test_virtual_table_comprehensive
 
-all: individual
+# Default target builds all tests with fail-fast error handling
+.PHONY: all clean test rebuild full help individual additional tck
+.PHONY: compile-all compile-fail-fast debug list-sources
+.PHONY: print-tests
 
-individual: $(addprefix $(TEST_EXEC_DIR)/,$(INDIVIDUAL_TESTS))
+all: compile-all
 
-additional: $(addprefix $(TEST_EXEC_DIR)/,$(ADDITIONAL_TESTS))
+# Build all tests with fail-fast error handling - STOPS ON FIRST ERROR
+compile-all: $(addprefix $(TEST_EXEC_DIR)/,$(ALL_TESTS))
+	@echo "=== ALL TESTS COMPILED SUCCESSFULLY ==="
+	@echo "Total tests built: $(words $(ALL_TESTS))"
+	@echo ""
+	@echo "Available test executables:"
+	@for test in $(ALL_TESTS); do echo "  $(TEST_EXEC_DIR)/$$test"; done
 
-# TCK target - builds and runs all TCK tests with extension support
-tck: $(addprefix $(TEST_EXEC_DIR)/,$(TCK_TESTS))
-	@echo "=== Running TCK Test Suite ==="
-	$(TEST_EXEC_DIR)/tck_main
-
-full: $(addprefix $(TEST_EXEC_DIR)/,$(ALL_TESTS))
-
-# Rule to build individual test executables
-$(TEST_EXEC_DIR)/%: %.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
-	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
-
-# Special case for tck_main which needs additional includes
-$(TEST_EXEC_DIR)/tck_main: tck_main.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
-	$(CC) $(CFLAGS) -I../tck $< -o $@ -L../build -lgraph_static -lgraph_test_util -lsqlite3 -lunity -lm -ldl -lpthread
-
-# Special case for tests that need additional source files
-$(TEST_EXEC_DIR)/test_extension_loading: test_extension_loading.c test_database_utils.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
-
-$(TEST_EXEC_DIR)/test_virtual_table_comprehensive: test_virtual_table_comprehensive.c test_database_utils.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+compile-fail-fast: compile-all
 
 # Create directories
 $(TEST_EXEC_DIR):
@@ -65,12 +52,77 @@ $(TEST_EXEC_DIR):
 $(OBJ_DIR):
 	@mkdir -p $@
 
-# Run individual tests using the existing script
-test: individual
-	@echo "Running individual tests..."
+# Default rule for single-source tests - FAIL IMMEDIATELY ON ANY ERROR
+$(TEST_EXEC_DIR)/%: %.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
+	@echo "Building test executable: $@"
+	@if ! $(CC) $(CFLAGS) $< -o $@ $(LDFLAGS); then \
+		echo "ERROR: Failed to build $@ from $<"; \
+		echo "This build uses FAIL-FAST: Any compilation or linking error stops the entire build."; \
+		exit 1; \
+	fi
+
+# Special rules for multi-source tests - FAIL IMMEDIATELY ON ANY ERROR
+$(TEST_EXEC_DIR)/test_extension_loading: test_extension_loading.c test_database_utils.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
+	@echo "Building multi-source test: $@"
+	@if ! $(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS); then \
+		echo "ERROR: Failed to build $@"; \
+		echo "This build uses FAIL-FAST: Any compilation or linking error stops the entire build."; \
+		exit 1; \
+	fi
+
+$(TEST_EXEC_DIR)/test_virtual_table_comprehensive: test_virtual_table_comprehensive.c test_database_utils.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
+	@echo "Building multi-source test: $@"
+	@if ! $(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS); then \
+		echo "ERROR: Failed to build $@"; \
+		echo "This build uses FAIL-FAST: Any compilation or linking error stops the entire build."; \
+		exit 1; \
+	fi
+
+# Special case for tck_main which needs additional includes - FAIL IMMEDIATELY ON ANY ERROR
+$(TEST_EXEC_DIR)/tck_main: tck_main.c | $(TEST_EXEC_DIR) $(OBJ_DIR)
+	@echo "Building TCK test: $@"
+	@if ! $(CC) $(CFLAGS) -I../tck $< -o $@ $(LDFLAGS); then \
+		echo "ERROR: Failed to build $@"; \
+		echo "This build uses FAIL-FAST: Any compilation or linking error stops the entire build."; \
+		exit 1; \
+	fi
+
+# Backward compatibility targets
+individual: $(addprefix $(TEST_EXEC_DIR)/,test_cypher_basic test_planner_compile test_executor_compile test_write_simple test_merge_simple test_write_comprehensive)
+
+additional: $(addprefix $(TEST_EXEC_DIR)/,test_cypher_lexer test_cypher_parser test_cypher_ast test_extension_loading test_virtual_table_comprehensive test_graph_updates)
+
+# TCK target - builds and runs all TCK tests with extension support
+tck: $(addprefix $(TEST_EXEC_DIR)/,tck_main)
+	@echo "=== Running TCK Test Suite ==="
+	$(TEST_EXEC_DIR)/tck_main
+
+full: compile-all
+
+# Run tests using the existing script
+test: compile-all
+	@echo "Running tests using existing script..."
 	cd .. && tests/run_all_tests.sh
 
-rebuild: clean all
+# Debug target to show what tests would be built
+debug: list-sources
+	@echo ""
+	@echo "Build configuration:"
+	@echo "  Total tests to build: $(words $(ALL_TESTS))"
+	@echo "  Multi-source tests: $(MULTI_SOURCE_TESTS)"
+	@echo "  Build mode: FAIL-FAST (stops on first error)"
+
+list-sources:
+	@echo "All test sources found:"
+	@for src in $(ALL_TEST_SOURCES); do echo "  $$src"; done
+	@echo ""
+	@echo "Utility sources (not standalone):"
+	@for src in $(UTILITY_SOURCES); do echo "  $$src"; done
+	@echo ""
+	@echo "Standalone test executables to build:"
+	@for test in $(ALL_TESTS); do echo "  $$test"; done
+
+rebuild: clean compile-all
 
 clean:
 	rm -rf $(TEST_EXEC_DIR)
@@ -78,25 +130,30 @@ clean:
 
 # Help target
 help:
+	@echo "SQLite Graph Extension - Comprehensive Test Build System"
+	@echo "========================================================"
+	@echo ""
+	@echo "This Makefile builds ALL test sources into individual executables"
+	@echo "using FAIL-FAST error handling - the build stops immediately"
+	@echo "when any single test fails to compile or link."
+	@echo ""
 	@echo "Available targets:"
-	@echo "  all        - Build individual tests (default)"
-	@echo "  individual - Build core individual tests"
-	@echo "  additional - Build additional tests"
-	@echo "  tck        - Build and run TCK test suite"
-	@echo "  full       - Build all tests"
-	@echo "  test       - Build and run tests using run_all_tests.sh"
-	@echo "  clean      - Clean build files"
+	@echo "  all         - Build all tests (default, fail-fast)"
+	@echo "  compile-all - Build all tests with immediate failure on any error"
+	@echo "  individual  - Build core individual tests (backward compatibility)"
+	@echo "  additional  - Build additional tests (backward compatibility)"  
+	@echo "  tck         - Build and run TCK test suite"
+	@echo "  full        - Build all tests (alias for compile-all)"
+	@echo "  test        - Build and run tests using run_all_tests.sh"
+	@echo "  debug       - Show what tests would be built"
+	@echo "  list-sources- Show all test source files"
+	@echo "  clean       - Clean build files"
+	@echo "  rebuild     - Clean and build all tests"
 	@echo ""
-	@echo "Individual tests:"
-	@for test in $(INDIVIDUAL_TESTS); do echo "    $$test"; done
-	@echo ""
-	@echo "Additional tests:"
-	@for test in $(ADDITIONAL_TESTS); do echo "    $$test"; done
-	@echo ""
-	@echo "TCK tests:"
-	@for test in $(TCK_TESTS); do echo "    $$test"; done
-
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	@echo "Build Statistics:"
+	@echo "  Total tests found: $(words $(ALL_TESTS))"
+	@echo "  Test source files: $(words $(ALL_TEST_SOURCES))"
+	@echo "  Multi-source tests: $(words $(MULTI_SOURCE_TESTS))"
 
 # TCK Coverage targets
 .PHONY: tck-coverage tck-report tck-generate
@@ -122,3 +179,7 @@ tck-generate:
 update-coverage:
 	@python3 ../scripts/update_compliance.py > /dev/null
 	@echo "Coverage updated: $$(jq -r '.statistics.compliance_percentage' coverage.json)%"
+
+# Print tests target for run_all_tests.sh script
+print-tests:
+	@echo $(ALL_TESTS)

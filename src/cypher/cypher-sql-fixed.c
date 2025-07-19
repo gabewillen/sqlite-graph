@@ -10,6 +10,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 
 #include "cypher.h"
 #include "graph-util.h"
+#include "graph-memory.h"
 #include <string.h>
 #include <stdlib.h>
 

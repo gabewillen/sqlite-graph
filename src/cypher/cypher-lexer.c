@@ -14,13 +14,26 @@
 * See the file LICENSE for more details.
 */
 
+// SQLite Extension API handling - check if we're in extension mode
+#ifdef SQLITE_EXTENSION_BUILD
 #include "sqlite3ext.h"
 #ifndef SQLITE_CORE
 extern const sqlite3_api_routines *sqlite3_api;
 #endif
+// Use extension API functions
+#define CYPHER_MALLOC(x) sqlite3_malloc(x)
+#define CYPHER_FREE(x) sqlite3_free(x)
+#define CYPHER_REALLOC(x, y) sqlite3_realloc(x, y)
+#else
+// Use standard library functions for standalone/test mode
+#include <sqlite3.h>
+#include <stdlib.h>
+#define CYPHER_MALLOC(x) sqlite3_malloc(x)
+#define CYPHER_FREE(x) sqlite3_free(x)
+#define CYPHER_REALLOC(x, y) sqlite3_realloc(x, y)
+#endif
 
 #include "cypher.h"
-#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -28,7 +41,10 @@ extern const sqlite3_api_routines *sqlite3_api;
 
 // Initializes a new lexer instance.
 CypherLexer *cypherLexerCreate(const char *zInput) {
-    CypherLexer *pLexer = (CypherLexer *)sqlite3_malloc(sizeof(CypherLexer));
+    if (!zInput) {
+        return NULL;
+    }
+    CypherLexer *pLexer = (CypherLexer *)CYPHER_MALLOC(sizeof(CypherLexer));
     if (!pLexer) {
         return NULL;
     }
@@ -44,13 +60,14 @@ CypherLexer *cypherLexerCreate(const char *zInput) {
 
 // Frees all allocated memory associated with the lexer.
 void cypherLexerDestroy(CypherLexer *pLexer) {
+    if (!pLexer) return;
     if (pLexer->zErrorMsg) {
-        sqlite3_free(pLexer->zErrorMsg);
+        CYPHER_FREE(pLexer->zErrorMsg);
     }
     if (pLexer->pLastToken) {
-        sqlite3_free(pLexer->pLastToken);
+        CYPHER_FREE(pLexer->pLastToken);
     }
-    sqlite3_free(pLexer);
+    CYPHER_FREE(pLexer);
 }
 
 static char lexerPeek(CypherLexer *pLexer, int offset) {
@@ -100,9 +117,9 @@ static void lexerSkipComment(CypherLexer *pLexer) {
 
 static CypherToken *lexerAddToken(CypherLexer *pLexer, CypherTokenType type, int startPos, int endPos) {
     if (pLexer->pLastToken) {
-        sqlite3_free(pLexer->pLastToken);
+        CYPHER_FREE(pLexer->pLastToken);
     }
-    CypherToken *pToken = (CypherToken *)sqlite3_malloc(sizeof(CypherToken));
+    CypherToken *pToken = (CypherToken *)CYPHER_MALLOC(sizeof(CypherToken));
     if (!pToken) {
         return NULL;
     }
@@ -118,7 +135,7 @@ static CypherToken *lexerAddToken(CypherLexer *pLexer, CypherTokenType type, int
 
 static void lexerSetError(CypherLexer *pLexer, const char *zFormat, ...) {
     if (pLexer->zErrorMsg) {
-        sqlite3_free(pLexer->zErrorMsg);
+        CYPHER_FREE(pLexer->zErrorMsg);
     }
     
     va_list args;
@@ -137,7 +154,7 @@ static void lexerSetError(CypherLexer *pLexer, const char *zFormat, ...) {
         return;
     }
 
-    pLexer->zErrorMsg = (char *)sqlite3_malloc(size + 1);
+    pLexer->zErrorMsg = (char *)CYPHER_MALLOC(size + 1);
     if (!pLexer->zErrorMsg) {
         va_end(args);
         // Allocation failed

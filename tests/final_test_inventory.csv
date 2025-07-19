@@ -1,0 +1,48 @@
+test,status,error
+test_advanced,COMPILE_FAIL,/usr/bin/ld: /tmp/cck4BV5c.o: warning: relocation against `g_pTestDb' in read-only section `.text' 
+test_algorithms,COMPILE_FAIL,/usr/bin/ld: /tmp/ccBbbhMb.o: warning: relocation against `g_pTestDb' in read-only section `.text' 
+test_concurrent,PASS,
+test_create_node,COMPILE_FAIL,/usr/bin/ld: /tmp/ccr7XdKD.o: in function `setUp': 
+test_create_node_real,PASS,
+test_create_node_simple,RUNTIME_FAIL,
+test_cypher_ast,RUNTIME_FAIL,
+test_cypher_basic,PASS,
+test_cypher_basic_extension,RUNTIME_FAIL,Testing SQLite Graph Extension - Basic Functionality 
+test_cypher_create_node_integration,COMPILE_FAIL,/usr/bin/ld: ../build/libgraph_static.a(cypher-storage.o): in function `cypherStorageAddNode': 
+test_cypher_executor,COMPILE_FAIL,/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o: in function `_start': 
+test_cypher_extension,RUNTIME_FAIL,Testing SQLite Graph Extension - Full Cypher Support 
+test_cypher_lexer,RUNTIME_FAIL,
+test_cypher_parser,RUNTIME_FAIL,
+test_cypher_planner,COMPILE_FAIL,/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o: in function `_start': 
+test_database_utils,COMPILE_FAIL,/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o: in function `_start': 
+test_dijkstra_comprehensive,RUNTIME_FAIL,test_dijkstra_comprehensive: test_dijkstra_comprehensive.c:51: test_dijkstra_simple_path: Assertion `rc == SQLITE_OK' failed. 
+test_executor_compile,PASS,
+test_extension_loading,RUNTIME_FAIL,
+test_extension_real,RUNTIME_FAIL,Cannot load extension: ./graph.so: cannot open shared object file: No such file or directory === REAL SQLITE EXTENSION LOADING TEST === 
+test_graph_algorithms_simple,PASS,
+test_graph_extension,RUNTIME_FAIL,Cannot load extension: ./graph_simple.so: cannot open shared object file: No such file or directory === SQLITE GRAPH EXTENSION TEST === 
+test_graph_updates,RUNTIME_FAIL,test_graph_updates: test_graph_updates.c:15: test_update_node_properties: Assertion `rc == SQLITE_OK' failed. 
+test_integration,COMPILE_FAIL,/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o: in function `_start': 
+test_main,COMPILE_FAIL,/usr/bin/ld: /tmp/ccWKb79w.o: in function `main': 
+test_merge_simple,PASS,
+test_minimal_extension,COMPILE_FAIL,/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o: in function `_start': 
+test_minimal_load,RUNTIME_FAIL,Cannot load extension: ./testgraph.so: cannot open shared object file: No such file or directory === MINIMAL EXTENSION LOADING TEST === 
+test_performance_basic,RUNTIME_FAIL,SQLite Graph Extension - Performance Testing 
+test_performance,COMPILE_FAIL,/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o: in function `_start': 
+test_performance_dijkstra,RUNTIME_FAIL,test_performance_dijkstra: test_performance_dijkstra.c:334: test_dijkstra_scalability: Assertion `ratio2 < 50.0' failed. 
+test_performance_features,COMPILE_FAIL,/usr/bin/ld: /tmp/cc8Z0tiI.o: warning: relocation against `g_pTestDb' in read-only section `.text' 
+test_performance_framework,COMPILE_FAIL,/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o: in function `_start': 
+test_performance_optimization,COMPILE_FAIL,/usr/bin/ld: /tmp/ccInaskc.o: warning: relocation against `g_pTestDb' in read-only section `.text' 
+test_planner_compile,PASS,
+test_schema,COMPILE_FAIL,test_schema.c: In function ‘teardownSchemaTests’: 
+test_simple,RUNTIME_FAIL,test_simple.c:25:testGraphBasicWorkflow:FAIL: Expected 100 Was 1 
+test_sql_functions,PASS,
+test_storage,COMPILE_FAIL,/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o: in function `_start': 
+test_tck_basic,PASS,
+test_transaction_complete,PASS,
+test_traversal,COMPILE_FAIL,/usr/bin/ld: /tmp/ccCyLEI6.o: warning: relocation against `g_pTestDb' in read-only section `.text' 
+test_virtual_table,COMPILE_FAIL,/usr/bin/ld: /tmp/ccnyXoB8.o: warning: relocation against `g_pTestDb' in read-only section `.text' 
+test_virtual_table_comprehensive,COMPILE_FAIL,/usr/bin/ld: /tmp/ccg1zX6I.o: in function `setUp': 
+test_write_compile,RUNTIME_FAIL,
+test_write_comprehensive,PASS,
+test_write_simple,PASS,

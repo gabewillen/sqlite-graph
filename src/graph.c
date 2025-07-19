@@ -12,9 +12,12 @@
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 #include "graph.h"
+#include "graph-memory.h"
 #include "graph-vtab.h"
+#include "graph-memory.h"
 #include "cypher.h"
 #include "graph-util.h"
+#include "graph-memory.h"
 #include "cypher-planner.h"
 #include "cypher-executor.h"
 #include <string.h>

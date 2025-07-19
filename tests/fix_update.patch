@@ -1,0 +1,31 @@
+--- a/src/graph-vtab.c
++++ b/src/graph-vtab.c
+@@ -641,8 +641,26 @@ int graphUpdate(sqlite3_vtab *pVtab, int argc, sqlite3_value **argv, sqlite3_in
+   }
+   // INSERT operation (argv[0] and argv[1] are NULL)
+   else if (argc >= 11 && sqlite3_value_type(argv[0]) == SQLITE_NULL && 
+            sqlite3_value_type(argv[1]) == SQLITE_NULL) {
+-    
+-    const char *type = (const char *)sqlite3_value_text(argv[2]); // type column
++   
++    const char *type = (const char *)sqlite3_value_text(argv[2]); // type column
++    
++    // Check if this is actually an UPDATE disguised as INSERT
++    // This happens when SQLite doesn't recognize the rowid properly
++    if (type && strcmp(type, "node") == 0) {
++      // Check if only properties column is being set (typical for UPDATE)
++      int non_null_count = 0;
++      for (int i = 2; i < argc; i++) {
++        if (sqlite3_value_type(argv[i]) != SQLITE_NULL) {
++          non_null_count++;
++        }
++      }
++      // If only type and properties are set, treat as UPDATE
++      if (non_null_count == 2 && sqlite3_value_type(argv[9]) != SQLITE_NULL) {
++        // This is likely an UPDATE - find the existing node and update it
++        // For now, we'll implement a simple approach
++      }
++    }
+     
+     if (type && strcmp(type, "node") == 0) {
+       // Insert node: get id and properties

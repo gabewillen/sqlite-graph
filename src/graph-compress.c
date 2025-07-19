@@ -18,7 +18,9 @@ extern const sqlite3_api_routines *sqlite3_api;
 #define HAVE_ZLIB 0
 
 #include "graph.h"
+#include "graph-memory.h"
 #include "graph-performance.h"
+#include "graph-memory.h"
 
 /* Dictionary entry for string compression */
 typedef struct DictEntry {

@@ -20,8 +20,11 @@ extern const sqlite3_api_routines *sqlite3_api;
 #include <sys/stat.h>
 #include <unistd.h>
 #include "graph.h"
+#include "graph-memory.h"
 #include "graph-performance.h"
+#include "graph-memory.h"
 #include "graph-bulk.h"
+#include "graph-memory.h"
 
 /* CSV parser state */
 typedef struct CSVParser {

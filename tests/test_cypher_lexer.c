@@ -15,9 +15,37 @@
 */
 
 #include "cypher/cypher-lexer.h"
+#include <sqlite3.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+/* Global test database - required for extension functions */
+sqlite3 *g_pTestDb = 0;
+
+/* Forward declaration of extension init function */
+int sqlite3_graph_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
+
+/* Setup global test database */
+void test_setUp(void) {
+    int rc;
+    if (!g_pTestDb) {
+        rc = sqlite3_open(":memory:", &g_pTestDb);
+        if (rc == SQLITE_OK) {
+            sqlite3_db_config(g_pTestDb, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0);
+            sqlite3_enable_load_extension(g_pTestDb, 1);
+            sqlite3_graph_init(g_pTestDb, NULL, NULL);
+        }
+    }
+}
+
+/* Cleanup global test database */
+void test_tearDown(void) {
+    if (g_pTestDb) {
+        sqlite3_close(g_pTestDb);
+        g_pTestDb = NULL;
+    }
+}
 
 void test_simple_keywords() {
     const char *query = "MATCH n RETURN n";
@@ -58,7 +86,10 @@ void test_operators() {
 
     for (int i = 0; i < sizeof(expected_tokens) / sizeof(CypherTokenType); i++) {
         CypherToken *token = cypherLexerNextToken(lexer);
-        assert(token->type == expected_tokens[i]);
+        if (token->type != expected_tokens[i]) {
+            printf("Expected token %d, got %d at index %d\n", expected_tokens[i], token->type, i);
+            assert(0);
+        }
     }
 
     cypherLexerDestroy(lexer);
@@ -101,9 +132,57 @@ void test_literals() {
     printf("test_literals passed\n");
 }
 
+// Regression test for null dereference in lexer
+void test_lexer_null_input_regression() {
+    CypherLexer *lexer = cypherLexerCreate(NULL);
+    assert(lexer == NULL);
+    printf("test_lexer_null_input_regression passed\n");
+}
+
+// Regression test for uninitialized token array
+void test_lexer_empty_input_regression() {
+    const char *query = "";
+    CypherLexer *lexer = cypherLexerCreate(query);
+    assert(lexer != NULL);
+    
+    CypherToken *token = cypherLexerNextToken(lexer);
+    assert(token->type == CYPHER_TOK_EOF);
+    
+    cypherLexerDestroy(lexer);
+    printf("test_lexer_empty_input_regression passed\n");
+}
+
+// Regression test for memory reallocation issues
+void test_lexer_long_identifier_regression() {
+    // Create a very long identifier to test memory reallocation
+    char long_query[1000] = "very";
+    for (int i = 4; i < 990; i++) {
+        long_query[i] = 'a' + (i % 26);
+    }
+    long_query[990] = '\0';
+    
+    CypherLexer *lexer = cypherLexerCreate(long_query);
+    assert(lexer != NULL);
+    
+    CypherToken *token = cypherLexerNextToken(lexer);
+    assert(token->type == CYPHER_TOK_IDENTIFIER);
+    assert(token->len == 990);
+    
+    cypherLexerDestroy(lexer);
+    printf("test_lexer_long_identifier_regression passed\n");
+}
+
 int main() {
+    test_setUp();
+    
     test_simple_keywords();
     test_operators();
     test_literals();
+    test_lexer_null_input_regression();
+    test_lexer_empty_input_regression();
+    test_lexer_long_identifier_regression();
+    
+    test_tearDown();
+    printf("All lexer tests passed!\n");
     return 0;
 }

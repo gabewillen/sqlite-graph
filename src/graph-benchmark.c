@@ -17,7 +17,9 @@ extern const sqlite3_api_routines *sqlite3_api;
 #include <math.h>
 #include <stdio.h>
 #include "graph.h"
+#include "graph-memory.h"
 #include "graph-performance.h"
+#include "graph-memory.h"
 
 /*
 ** LDBC Social Network Benchmark Implementation

@@ -15,7 +15,9 @@ extern const sqlite3_api_routines *sqlite3_api;
 #endif
 /* SQLITE_EXTENSION_INIT1 - removed to prevent multiple definition */
 #include "graph.h"
+#include "graph-memory.h"
 #include "graph-vtab.h"
+#include "graph-memory.h"
 #include <string.h>
 #include <stdlib.h>
 

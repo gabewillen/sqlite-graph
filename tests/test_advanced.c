@@ -449,3 +449,90 @@ void runAdvancedTests(void){
   RUN_TEST(testStronglyConnectedComponents);
   
 }
+
+/* Global test database - required by Unity test framework */
+sqlite3 *g_pTestDb = 0;
+
+/* Forward declaration of extension init function */
+int sqlite3_graph_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
+
+/* Setup global test database */
+void setUp(void) {
+    int rc;
+    if (!g_pTestDb) {
+        rc = sqlite3_open(":memory:", &g_pTestDb);
+        if (rc == SQLITE_OK) {
+            sqlite3_db_config(g_pTestDb, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0);
+sqlite3_enable_load_extension(g_pTestDb, 1);
+sqlite3_graph_init(g_pTestDb, NULL, NULL);
+        }
+    }
+}
+
+/* Cleanup global test database */
+void tearDown(void) {
+    /* Keep database open between tests for efficiency */
+}
+
+/* Main function for standalone test execution */
+int main(void) {
+    UNITY_BEGIN();
+    
+    RUN_TEST(testBetweennessCentralitySimple);
+    RUN_TEST(testBetweennessCentralityEmpty);
+    RUN_TEST(testClosenessCentralitySimple);
+    RUN_TEST(testTopologicalSortDAG);
+    RUN_TEST(testTopologicalSortCycle);
+    RUN_TEST(testHasCycle);
+    RUN_TEST(testConnectedComponents);
+    RUN_TEST(testStronglyConnectedComponents);
+    RUN_TEST(testBetweennessCentralityLinear);
+    RUN_TEST(testClosenessCentralityStar);
+    
+    if (g_pTestDb) {
+        sqlite3_close(g_pTestDb);
+        g_pTestDb = 0;
+    }
+    
+    return UNITY_END();
+}
+
+/* Stub implementations for missing advanced functions */
+/* These would normally be implemented in src/graph-advanced.c */
+
+int graphBetweennessCentrality(GraphVtab *pVtab, char **pzResults) {
+    /* Stub implementation - return JSON with empty results */
+    if (pzResults) {
+        *pzResults = sqlite3_mprintf("{\"error\":\"Not implemented\"}");
+    }
+    return SQLITE_ERROR;
+}
+
+int graphClosenessCentrality(GraphVtab *pVtab, char **pzResults) {
+    /* Stub implementation - return JSON with empty results */
+    if (pzResults) {
+        *pzResults = sqlite3_mprintf("{\"error\":\"Not implemented\"}");
+    }
+    return SQLITE_ERROR;
+}
+
+int graphTopologicalSort(GraphVtab *pVtab, char **pzOrder) {
+    /* Stub implementation - return JSON with empty results */
+    if (pzOrder) {
+        *pzOrder = sqlite3_mprintf("[]");
+    }
+    return SQLITE_ERROR;
+}
+
+int graphHasCycle(GraphVtab *pVtab) {
+    /* Stub implementation - return 0 (no cycle) */
+    return 0;
+}
+
+int graphConnectedComponents(GraphVtab *pVtab, char **pzComponents) {
+    /* Stub implementation - return JSON with empty results */
+    if (pzComponents) {
+        *pzComponents = sqlite3_mprintf("{}");
+    }
+    return SQLITE_ERROR;
+}

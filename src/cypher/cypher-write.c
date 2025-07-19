@@ -23,6 +23,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 #include <time.h>
 #include "cypher-write.h"
 #include "graph-vtab.h"
+#include "graph-memory.h"
 
 /*
 ** Constants for input validation

@@ -15,7 +15,9 @@ extern const sqlite3_api_routines *sqlite3_api;
 #include <stdlib.h>
 #include <math.h>
 #include "graph.h"
+#include "graph-memory.h"
 #include "graph-performance.h"
+#include "graph-memory.h"
 #include "cypher-planner.h"
 #include <sys/time.h>
 

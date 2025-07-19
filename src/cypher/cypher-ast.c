@@ -6,7 +6,42 @@
 ** specified in ast-generator-plan.md.
 */
 
-#include "sqlite3_noext.h"
+// SQLite Extension API handling - check if we're in extension mode
+#ifdef SQLITE_EXTENSION_BUILD
+#include "sqlite3ext.h"
+#ifndef SQLITE_CORE
+extern const sqlite3_api_routines *sqlite3_api;
+#endif
+// Use extension API functions
+#define CYPHER_MALLOC(x) sqlite3_malloc(x)
+#define CYPHER_FREE(x) sqlite3_free(x)  
+#define CYPHER_REALLOC(x, y) sqlite3_realloc(x, y)
+#define CYPHER_MPRINTF sqlite3_mprintf
+#else
+// Use standard library functions for standalone/test mode
+#include <sqlite3.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#define CYPHER_MALLOC(x) sqlite3_malloc(x)
+#define CYPHER_FREE(x) sqlite3_free(x)
+#define CYPHER_REALLOC(x, y) sqlite3_realloc(x, y)
+static char *CYPHER_MPRINTF(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    int len = vsnprintf(NULL, 0, fmt, ap);
+    va_end(ap);
+    if (len < 0) return NULL;
+    char *result = sqlite3_malloc(len + 1);
+    if (result) {
+        va_start(ap, fmt);
+        vsnprintf(result, len + 1, fmt, ap);
+        va_end(ap);
+    }
+    return result;
+}
+#endif
+
 #include "cypher.h"
 #include <string.h>
 #include <stdio.h>
@@ -16,7 +51,7 @@
 
 // Create a new AST node of the specified type.
 CypherAst *cypherAstCreate(CypherAstNodeType type, int iLine, int iColumn) {
-  CypherAst *pAst = sqlite3_malloc(sizeof(CypherAst));
+  CypherAst *pAst = CYPHER_MALLOC(sizeof(CypherAst));
   if( !pAst ) return NULL;
 
   memset(pAst, 0, sizeof(CypherAst));
@@ -24,10 +59,10 @@ CypherAst *cypherAstCreate(CypherAstNodeType type, int iLine, int iColumn) {
   pAst->iLine = iLine;
   pAst->iColumn = iColumn;
   pAst->nChildrenAlloc = AST_INITIAL_CHILDREN;
-  pAst->apChildren = sqlite3_malloc(sizeof(CypherAst*) * pAst->nChildrenAlloc);
+  pAst->apChildren = CYPHER_MALLOC(sizeof(CypherAst*) * pAst->nChildrenAlloc);
 
   if( !pAst->apChildren ) {
-    sqlite3_free(pAst);
+    CYPHER_FREE(pAst);
     return NULL;
   }
 
@@ -41,9 +76,9 @@ void cypherAstDestroy(CypherAst *pAst) {
   for( int i = 0; i < pAst->nChildren; i++ ) {
     cypherAstDestroy(pAst->apChildren[i]);
   }
-  sqlite3_free(pAst->apChildren);
-  sqlite3_free(pAst->zValue);
-  sqlite3_free(pAst);
+  CYPHER_FREE(pAst->apChildren);
+  CYPHER_FREE(pAst->zValue);
+  CYPHER_FREE(pAst);
 }
 
 // Add a child node to an AST node.
@@ -53,7 +88,7 @@ void cypherAstAddChild(CypherAst *pParent, CypherAst *pChild) {
   if( pParent->nChildren >= pParent->nChildrenAlloc ) {
     int nNewMax = pParent->nChildrenAlloc * 2;
     if (nNewMax == 0) nNewMax = AST_INITIAL_CHILDREN;
-    CypherAst **apNew = sqlite3_realloc(pParent->apChildren, sizeof(CypherAst*) * nNewMax);
+    CypherAst **apNew = CYPHER_REALLOC(pParent->apChildren, sizeof(CypherAst*) * nNewMax);
     if( !apNew ) {
       // In a real scenario, we'd need more robust error handling.
       // For now, we fail silently, which is bad practice but avoids crashing.
@@ -68,11 +103,11 @@ void cypherAstAddChild(CypherAst *pParent, CypherAst *pChild) {
 // Set the string value of an AST node.
 void cypherAstSetValue(CypherAst *pAst, const char *zValue) {
   if( !pAst ) return;
-  sqlite3_free(pAst->zValue);
+  CYPHER_FREE(pAst->zValue);
   pAst->zValue = NULL;
   if( zValue ) {
-    pAst->zValue = sqlite3_mprintf("%s", zValue);
-    // No return value to check against sqlite3_mprintf failure in this function signature
+    pAst->zValue = CYPHER_MPRINTF("%s", zValue);
+    // No return value to check against CYPHER_MPRINTF failure in this function signature
   }
 }
 

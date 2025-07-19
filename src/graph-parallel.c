@@ -17,7 +17,9 @@ extern const sqlite3_api_routines *sqlite3_api;
 #include <unistd.h>
 #include <limits.h>
 #include "graph.h"
+#include "graph-memory.h"
 #include "graph-performance.h"
+#include "graph-memory.h"
 
 /* Thread-local storage for worker threads */
 typedef struct WorkerContext {

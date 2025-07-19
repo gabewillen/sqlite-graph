@@ -14,9 +14,23 @@
 * See the file LICENSE for more details.
 */
 
+// SQLite Extension API handling - check if we're in extension mode
+#ifdef SQLITE_EXTENSION_BUILD
 #include "sqlite3ext.h"
 #ifndef SQLITE_CORE
 extern const sqlite3_api_routines *sqlite3_api;
+#endif
+// Use extension API functions
+#define CYPHER_MALLOC(x) CYPHER_MALLOC(x)
+#define CYPHER_FREE(x) CYPHER_FREE(x)
+#define CYPHER_REALLOC(x, y) CYPHER_REALLOC(x, y)
+#else
+// Use standard library functions for standalone/test mode
+#include <sqlite3.h>
+#include <stdlib.h>
+#define CYPHER_MALLOC(x) sqlite3_malloc(x)
+#define CYPHER_FREE(x) sqlite3_free(x)
+#define CYPHER_REALLOC(x, y) sqlite3_realloc(x, y)
 #endif
 
 #include "cypher.h"
@@ -86,7 +100,7 @@ static CypherToken *parserConsumeToken(CypherLexer *pLexer, CypherTokenType expe
 }
 
 CypherParser *cypherParserCreate(void) {
-    CypherParser *pParser = (CypherParser *)sqlite3_malloc(sizeof(CypherParser));
+    CypherParser *pParser = (CypherParser *)CYPHER_MALLOC(sizeof(CypherParser));
     if (!pParser) {
         return NULL;
     }
@@ -101,14 +115,14 @@ void cypherParserDestroy(CypherParser *pParser) {
         cypherAstDestroy(pParser->pAst);
     }
     if (pParser->zErrorMsg) {
-        sqlite3_free(pParser->zErrorMsg);
+        CYPHER_FREE(pParser->zErrorMsg);
     }
-    sqlite3_free(pParser);
+    CYPHER_FREE(pParser);
 }
 
 static void parserSetError(CypherParser *pParser, CypherLexer *pLexer, const char *zFormat, ...) {
     if (pParser->zErrorMsg) {
-        sqlite3_free(pParser->zErrorMsg);
+        CYPHER_FREE(pParser->zErrorMsg);
     }
     
     va_list args;
@@ -127,7 +141,7 @@ static void parserSetError(CypherParser *pParser, CypherLexer *pLexer, const cha
         return;
     }
 
-    pParser->zErrorMsg = (char *)sqlite3_malloc(size + 256); // Add extra space for token info
+    pParser->zErrorMsg = (char *)CYPHER_MALLOC(size + 256); // Add extra space for token info
     if (!pParser->zErrorMsg) {
         va_end(args);
         // Allocation failed
@@ -146,6 +160,10 @@ static void parserSetError(CypherParser *pParser, CypherLexer *pLexer, const cha
 }
 
 CypherAst *cypherParse(CypherParser *pParser, const char *zQuery, char **pzErrMsg) {
+    if (!zQuery) {
+        if (pzErrMsg) *pzErrMsg = strdup("Query string is NULL");
+        return NULL;
+    }
     CypherLexer *pLexer = cypherLexerCreate(zQuery);
     if (!pLexer) {
         if (pzErrMsg) *pzErrMsg = strdup("Failed to create lexer");
@@ -209,7 +227,7 @@ int cypherValidateQuery(const char *zQuery, char **pzError) {
     }
     
     if (parseError) {
-        free(parseError);
+        sqlite3_free(parseError);
     }
     
     cypherParserDestroy(pParser);

@@ -24,6 +24,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 /* SQLITE_EXTENSION_INIT1 - removed to prevent multiple definition */
 #include "cypher-executor.h"
 #include "graph-vtab.h"
+#include "graph-memory.h"
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>

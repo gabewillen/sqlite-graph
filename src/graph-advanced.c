@@ -3,6 +3,7 @@
 extern const sqlite3_api_routines *sqlite3_api;
 #endif
 #include "graph.h"
+#include "graph-memory.h"
 #include <float.h>
 #include <string.h>
 #include <stdlib.h>
