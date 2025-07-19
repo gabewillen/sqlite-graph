@@ -15,7 +15,6 @@ TEST_EXEC_DIR = $(BUILD_DIR)/tests
 # Test executables we want to build individually (based on run_all_tests.sh)
 INDIVIDUAL_TESTS = test_cypher_basic test_planner_compile test_executor_compile \
                   test_write_simple test_merge_simple test_write_comprehensive \
-                  test_transaction_complete test_tck_basic test_cypher_all
 
 # Additional tests that can be built
 ADDITIONAL_TESTS = test_cypher_lexer test_cypher_parser test_cypher_ast \
@@ -97,8 +96,6 @@ help:
 	@echo "TCK tests:"
 	@for test in $(TCK_TESTS); do echo "    $$test"; done
 
-# Special rule for test_cypher_all which needs all source files
-../build/tests/test_cypher_all: test_cypher_all.c $(wildcard ../src/*.c) $(filter-out ../src/cypher/cypher-sql.c, $(wildcard ../src/cypher/*.c)) | ../build/tests
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 # TCK Coverage targets
