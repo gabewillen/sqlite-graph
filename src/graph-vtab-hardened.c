@@ -20,19 +20,19 @@ extern const sqlite3_api_routines *sqlite3_api;
 /*
 ** Forward declarations for virtual table methods
 */
-static int graphCreate(sqlite3*, void*, int, const char*const*, sqlite3_vtab**, char**);
-static int graphConnect(sqlite3*, void*, int, const char*const*, sqlite3_vtab**, char**);
-static int graphBestIndex(sqlite3_vtab*, sqlite3_index_info*);
-static int graphDisconnect(sqlite3_vtab*);
-static int graphDestroy(sqlite3_vtab*);
-static int graphOpen(sqlite3_vtab*, sqlite3_vtab_cursor**);
-static int graphClose(sqlite3_vtab_cursor*);
-static int graphFilter(sqlite3_vtab_cursor*, int, const char*, int, sqlite3_value**);
-static int graphNext(sqlite3_vtab_cursor*);
-static int graphEof(sqlite3_vtab_cursor*);
-static int graphColumn(sqlite3_vtab_cursor*, sqlite3_context*, int);
-static int graphRowid(sqlite3_vtab_cursor*, sqlite3_int64*);
-static int graphUpdate(sqlite3_vtab*, int, sqlite3_value**, sqlite3_int64*);
+int graphCreate(sqlite3*, void*, int, const char*const*, sqlite3_vtab**, char**);
+int graphConnect(sqlite3*, void*, int, const char*const*, sqlite3_vtab**, char**);
+int graphBestIndex(sqlite3_vtab*, sqlite3_index_info*);
+int graphDisconnect(sqlite3_vtab*);
+int graphDestroy(sqlite3_vtab*);
+int graphOpen(sqlite3_vtab*, sqlite3_vtab_cursor**);
+int graphClose(sqlite3_vtab_cursor*);
+int graphFilter(sqlite3_vtab_cursor*, int, const char*, int, sqlite3_value**);
+int graphNext(sqlite3_vtab_cursor*);
+int graphEof(sqlite3_vtab_cursor*);
+int graphColumn(sqlite3_vtab_cursor*, sqlite3_context*, int);
+int graphRowid(sqlite3_vtab_cursor*, sqlite3_int64*);
+int graphUpdate(sqlite3_vtab*, int, sqlite3_value**, sqlite3_int64*);
 
 /*
 ** Virtual table module structure with hardened destructor callbacks
@@ -66,7 +66,7 @@ sqlite3_module graphModule = {
 /*
 ** Create a new virtual table instance with hardened memory management
 */
-static int graphCreate(sqlite3 *pDb, void *pAux, int argc, 
+int graphCreate(sqlite3 *pDb, void *pAux, int argc, 
                        const char *const *argv, sqlite3_vtab **ppVtab, 
                        char **pzErr) {
   GRAPH_MEMORY_GUARD_BEGIN(mem_ctx);
@@ -171,7 +171,7 @@ static int graphCreate(sqlite3 *pDb, void *pAux, int argc,
 /*
 ** Connect to existing virtual table - same as create for this implementation
 */
-static int graphConnect(sqlite3 *pDb, void *pAux, int argc,
+int graphConnect(sqlite3 *pDb, void *pAux, int argc,
                         const char *const *argv, sqlite3_vtab **ppVtab,
                         char **pzErr) {
   return graphCreate(pDb, pAux, argc, argv, ppVtab, pzErr);
@@ -180,7 +180,7 @@ static int graphConnect(sqlite3 *pDb, void *pAux, int argc,
 /*
 ** Provide the query planner with information about the virtual table
 */
-static int graphBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo) {
+int graphBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo) {
   /* Suppress unused parameter warnings */
   (void)tab;
   
@@ -191,14 +191,14 @@ static int graphBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo) {
 /*
 ** Disconnect from virtual table with proper cleanup
 */
-static int graphDisconnect(sqlite3_vtab *pVtab) {
+int graphDisconnect(sqlite3_vtab *pVtab) {
   return graph_vtab_destroy_safe((GraphVtab*)pVtab);
 }
 
 /*
 ** Destroy virtual table with hardened cleanup
 */
-static int graphDestroy(sqlite3_vtab *pVtab) {
+int graphDestroy(sqlite3_vtab *pVtab) {
   GraphVtab *pGraph = (GraphVtab*)pVtab;
   GRAPH_MEMORY_GUARD_BEGIN(mem_ctx);
   char *zSql;
@@ -231,7 +231,7 @@ static int graphDestroy(sqlite3_vtab *pVtab) {
 /*
 ** Open a cursor for table scanning with hardened memory management
 */
-static int graphOpen(sqlite3_vtab *pVtab, sqlite3_vtab_cursor **ppCursor) {
+int graphOpen(sqlite3_vtab *pVtab, sqlite3_vtab_cursor **ppCursor) {
   GRAPH_MEMORY_GUARD_BEGIN(mem_ctx);
   GraphCursor *pCur;
   
@@ -250,7 +250,7 @@ static int graphOpen(sqlite3_vtab *pVtab, sqlite3_vtab_cursor **ppCursor) {
 /*
 ** Close cursor with proper cleanup
 */
-static int graphClose(sqlite3_vtab_cursor *cur) {
+int graphClose(sqlite3_vtab_cursor *cur) {
   graph_cursor_destroy((GraphCursor*)cur);
   return SQLITE_OK;
 }
@@ -258,7 +258,7 @@ static int graphClose(sqlite3_vtab_cursor *cur) {
 /*
 ** Filter cursor for query with hardened SQL preparation
 */
-static int graphFilter(sqlite3_vtab_cursor *pVtabCursor, int idxNum,
+int graphFilter(sqlite3_vtab_cursor *pVtabCursor, int idxNum,
                        const char *idxStr, int argc, sqlite3_value **argv) {
   GraphCursor *pCur = (GraphCursor*)pVtabCursor;
   GraphVtab *pVtab = pCur->pVtab;
@@ -324,7 +324,7 @@ static int graphFilter(sqlite3_vtab_cursor *pVtabCursor, int idxNum,
 /*
 ** Move cursor to next row
 */
-static int graphNext(sqlite3_vtab_cursor *cur) {
+int graphNext(sqlite3_vtab_cursor *cur) {
   GraphCursor *pCur = (GraphCursor*)cur;
   int rc;
   
@@ -362,7 +362,7 @@ static int graphNext(sqlite3_vtab_cursor *cur) {
 /*
 ** Check if cursor is at end
 */
-static int graphEof(sqlite3_vtab_cursor *cur) {
+int graphEof(sqlite3_vtab_cursor *cur) {
   GraphCursor *pCur = (GraphCursor*)cur;
   
   if (pCur->iIterMode == 0 && pCur->pNodeStmt) {
@@ -378,7 +378,7 @@ static int graphEof(sqlite3_vtab_cursor *cur) {
 /*
 ** Return column data for current cursor position
 */
-static int graphColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i) {
+int graphColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i) {
   GraphCursor *pCur = (GraphCursor*)cur;
   sqlite3_stmt *pStmt = (pCur->iIterMode == 0) ? pCur->pNodeStmt : pCur->pEdgeStmt;
   
@@ -434,7 +434,7 @@ static int graphColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i) {
 /*
 ** Return rowid for current cursor position
 */
-static int graphRowid(sqlite3_vtab_cursor *cur, sqlite3_int64 *pRowid) {
+int graphRowid(sqlite3_vtab_cursor *cur, sqlite3_int64 *pRowid) {
   GraphCursor *pCur = (GraphCursor*)cur;
   *pRowid = pCur->iRowid;
   return SQLITE_OK;
@@ -443,7 +443,7 @@ static int graphRowid(sqlite3_vtab_cursor *cur, sqlite3_int64 *pRowid) {
 /*
 ** Handle INSERT/UPDATE/DELETE operations with hardened memory management
 */
-static int graphUpdate(sqlite3_vtab *pVTab, int argc, sqlite3_value **argv,
+int graphUpdate(sqlite3_vtab *pVTab, int argc, sqlite3_value **argv,
                        sqlite3_int64 *pRowid) {
   GraphVtab *pGraph = (GraphVtab*)pVTab;
   GRAPH_MEMORY_GUARD_BEGIN(mem_ctx);
