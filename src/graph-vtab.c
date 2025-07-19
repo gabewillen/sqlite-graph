@@ -256,6 +256,19 @@ int graphConnect(sqlite3 *pDb, void *pAux, int argc,
 ** Performance: Critical for query optimization.
 */
 int graphBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pInfo){
+  printf("=== xBestIndex called ===\n");
+  printf("nConstraint: %d, nOrderBy: %d\n", pInfo->nConstraint, pInfo->nOrderBy);
+  for(int i = 0; i < pInfo->nConstraint; i++) {
+    printf("Constraint %d: column=%d, op=%d, usable=%d\n", 
+           i, pInfo->aConstraint[i].iColumn, 
+           pInfo->aConstraint[i].op, 
+           pInfo->aConstraint[i].usable);
+  }
+  for(int i = 0; i < pInfo->nOrderBy; i++) {
+    printf("OrderBy %d: column=%d, desc=%d\n", 
+           i, pInfo->aOrderBy[i].iColumn, 
+           pInfo->aOrderBy[i].desc);
+  }
   GraphVtab *pGraphVtab = (GraphVtab*)pVtab;
   int nNodes = 0, nEdges = 0;
   char *zSql;
@@ -500,7 +513,7 @@ int graphNext(sqlite3_vtab_cursor *pCursor){
   }
 
   rc = sqlite3_step(pGraphCursor->pEdgeStmt);
-  return rc == SQLITE_ROW ? SQLITE_OK : SQLITE_DONE;
+  if (rc == SQLITE_ROW) return SQLITE_OK; pGraphCursor->iIterMode = 2; return SQLITE_DONE;
 }
 
 /*
@@ -509,7 +522,7 @@ int graphNext(sqlite3_vtab_cursor *pCursor){
 */
 int graphEof(sqlite3_vtab_cursor *pCursor){
   GraphCursor *pGraphCursor = (GraphCursor*)pCursor;
-  return pGraphCursor->iIterMode==1 && sqlite3_data_count(pGraphCursor->pEdgeStmt)==0;
+  return pGraphCursor->iIterMode >= 2;
 }
 
 /*
