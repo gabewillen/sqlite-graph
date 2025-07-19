@@ -63,6 +63,14 @@ static void graphHasCycleFunc(sqlite3_context*, int, sqlite3_value**);
 static void graphConnectedComponentsFunc(sqlite3_context*, int, sqlite3_value**);
 static void graphStronglyConnectedComponentsFunc(sqlite3_context*, int, sqlite3_value**);
 
+/* Additional operations */
+static void graphNodeUpdateFunc(sqlite3_context*, int, sqlite3_value**);
+static void graphNodeDeleteFunc(sqlite3_context*, int, sqlite3_value**);
+static void graphEdgeUpdateFunc(sqlite3_context*, int, sqlite3_value**);
+static void graphEdgeDeleteFunc(sqlite3_context*, int, sqlite3_value**);
+static void graphNodeUpsertFunc(sqlite3_context*, int, sqlite3_value**);
+static void graphCascadeDeleteNodeFunc(sqlite3_context*, int, sqlite3_value**);
+
 /* Table-valued function registration from graph-tvf.c */
 extern int graphRegisterTVF(sqlite3 *pDb);
 
@@ -254,6 +262,55 @@ int sqlite3_graph_init(
   rc = cypherRegisterExecutorSqlFunctions(pDb);
   if( rc!=SQLITE_OK ){
     *pzErrMsg = sqlite3_mprintf("Failed to register Cypher executor functions: %s",
+                                sqlite3_errmsg(pDb));
+    return rc;
+  }
+  
+  /* Register additional graph operations */
+  rc = sqlite3_create_function(pDb, "graph_node_update", 2, SQLITE_UTF8, 0,
+                              graphNodeUpdateFunc, 0, 0);
+  if( rc!=SQLITE_OK ){
+    *pzErrMsg = sqlite3_mprintf("Failed to register graph_node_update: %s",
+                                sqlite3_errmsg(pDb));
+    return rc;
+  }
+  
+  rc = sqlite3_create_function(pDb, "graph_node_delete", 1, SQLITE_UTF8, 0,
+                              graphNodeDeleteFunc, 0, 0);
+  if( rc!=SQLITE_OK ){
+    *pzErrMsg = sqlite3_mprintf("Failed to register graph_node_delete: %s",
+                                sqlite3_errmsg(pDb));
+    return rc;
+  }
+  
+  rc = sqlite3_create_function(pDb, "graph_edge_update", 5, SQLITE_UTF8, 0,
+                              graphEdgeUpdateFunc, 0, 0);
+  if( rc!=SQLITE_OK ){
+    *pzErrMsg = sqlite3_mprintf("Failed to register graph_edge_update: %s",
+                                sqlite3_errmsg(pDb));
+    return rc;
+  }
+  
+  rc = sqlite3_create_function(pDb, "graph_edge_delete", 1, SQLITE_UTF8, 0,
+                              graphEdgeDeleteFunc, 0, 0);
+  if( rc!=SQLITE_OK ){
+    *pzErrMsg = sqlite3_mprintf("Failed to register graph_edge_delete: %s",
+                                sqlite3_errmsg(pDb));
+    return rc;
+  }
+  
+  rc = sqlite3_create_function(pDb, "graph_node_upsert", 2, SQLITE_UTF8, 0,
+                              graphNodeUpsertFunc, 0, 0);
+  if( rc!=SQLITE_OK ){
+    *pzErrMsg = sqlite3_mprintf("Failed to register graph_node_upsert: %s",
+                                sqlite3_errmsg(pDb));
+    return rc;
+  }
+  
+  rc = sqlite3_create_function(pDb, "graph_cascade_delete_node", 1, SQLITE_UTF8, 0,
+                              graphCascadeDeleteNodeFunc, 0, 0);
+  if( rc!=SQLITE_OK ){
+    *pzErrMsg = sqlite3_mprintf("Failed to register graph_cascade_delete_node: %s",
                                 sqlite3_errmsg(pDb));
     return rc;
   }
@@ -1305,4 +1362,236 @@ GraphEdge *graphFindEdge(GraphVtab *pVtab, sqlite3_int64 iFromId,
   }
   sqlite3_finalize(pStmt);
   return pEdge;
+}
+
+/*
+** SQL function: graph_node_update(node_id, properties)
+** Updates properties of an existing node.
+** Usage: SELECT graph_node_update(1, '{"name": "Alice Updated"}');
+*/
+static void graphNodeUpdateFunc(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
+  sqlite3_int64 iNodeId;
+  const unsigned char *zProperties;
+  char *zSql;
+  int rc;
+
+  if( pGraph==0 ){
+    sqlite3_result_error(pCtx, "No graph table available", -1);
+    return;
+  }
+
+  if( argc!=2 ){
+    sqlite3_result_error(pCtx, "graph_node_update() requires 2 arguments", -1);
+    return;
+  }
+
+  iNodeId = sqlite3_value_int64(argv[0]);
+  zProperties = sqlite3_value_text(argv[1]);
+
+  zSql = sqlite3_mprintf("UPDATE %s_nodes SET properties = %Q WHERE id = %lld", 
+                         pGraph->zTableName, zProperties, iNodeId);
+  rc = sqlite3_exec(pGraph->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    return;
+  }
+
+  sqlite3_result_int64(pCtx, iNodeId);
+}
+
+/*
+** SQL function: graph_node_delete(node_id)
+** Deletes a node by ID.
+** Usage: SELECT graph_node_delete(1);
+*/
+static void graphNodeDeleteFunc(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
+  sqlite3_int64 iNodeId;
+  char *zSql;
+  int rc;
+
+  if( pGraph==0 ){
+    sqlite3_result_error(pCtx, "No graph table available", -1);
+    return;
+  }
+
+  if( argc!=1 ){
+    sqlite3_result_error(pCtx, "graph_node_delete() requires 1 argument", -1);
+    return;
+  }
+
+  iNodeId = sqlite3_value_int64(argv[0]);
+
+  zSql = sqlite3_mprintf("DELETE FROM %s_nodes WHERE id = %lld", 
+                         pGraph->zTableName, iNodeId);
+  rc = sqlite3_exec(pGraph->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    return;
+  }
+
+  sqlite3_result_int64(pCtx, iNodeId);
+}
+
+/*
+** SQL function: graph_edge_update(edge_id, from_id, to_id, weight, properties)
+** Updates an existing edge.
+** Usage: SELECT graph_edge_update(1, 1, 2, 2.0, '{"updated": true}');
+*/
+static void graphEdgeUpdateFunc(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
+  sqlite3_int64 iEdgeId, iFromId, iToId;
+  double rWeight;
+  const unsigned char *zProperties;
+  char *zSql;
+  int rc;
+
+  if( pGraph==0 ){
+    sqlite3_result_error(pCtx, "No graph table available", -1);
+    return;
+  }
+
+  if( argc!=5 ){
+    sqlite3_result_error(pCtx, "graph_edge_update() requires 5 arguments", -1);
+    return;
+  }
+
+  iEdgeId = sqlite3_value_int64(argv[0]);
+  iFromId = sqlite3_value_int64(argv[1]);
+  iToId = sqlite3_value_int64(argv[2]);
+  rWeight = sqlite3_value_double(argv[3]);
+  zProperties = sqlite3_value_text(argv[4]);
+
+  zSql = sqlite3_mprintf("UPDATE %s_edges SET from_id = %lld, to_id = %lld, weight = %f, properties = %Q WHERE id = %lld", 
+                         pGraph->zTableName, iFromId, iToId, rWeight, zProperties, iEdgeId);
+  rc = sqlite3_exec(pGraph->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    return;
+  }
+
+  sqlite3_result_int64(pCtx, iEdgeId);
+}
+
+/*
+** SQL function: graph_edge_delete(edge_id)
+** Deletes an edge by ID.
+** Usage: SELECT graph_edge_delete(1);
+*/
+static void graphEdgeDeleteFunc(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
+  sqlite3_int64 iEdgeId;
+  char *zSql;
+  int rc;
+
+  if( pGraph==0 ){
+    sqlite3_result_error(pCtx, "No graph table available", -1);
+    return;
+  }
+
+  if( argc!=1 ){
+    sqlite3_result_error(pCtx, "graph_edge_delete() requires 1 argument", -1);
+    return;
+  }
+
+  iEdgeId = sqlite3_value_int64(argv[0]);
+
+  zSql = sqlite3_mprintf("DELETE FROM %s_edges WHERE id = %lld", 
+                         pGraph->zTableName, iEdgeId);
+  rc = sqlite3_exec(pGraph->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    return;
+  }
+
+  sqlite3_result_int64(pCtx, iEdgeId);
+}
+
+/*
+** SQL function: graph_node_upsert(node_id, properties)
+** Insert or update a node (upsert operation).
+** Usage: SELECT graph_node_upsert(1, '{"name": "Alice"}');
+*/
+static void graphNodeUpsertFunc(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
+  sqlite3_int64 iNodeId;
+  const unsigned char *zProperties;
+  char *zSql;
+  int rc;
+
+  if( pGraph==0 ){
+    sqlite3_result_error(pCtx, "No graph table available", -1);
+    return;
+  }
+
+  if( argc!=2 ){
+    sqlite3_result_error(pCtx, "graph_node_upsert() requires 2 arguments", -1);
+    return;
+  }
+
+  iNodeId = sqlite3_value_int64(argv[0]);
+  zProperties = sqlite3_value_text(argv[1]);
+
+  zSql = sqlite3_mprintf("INSERT OR REPLACE INTO %s_nodes (id, properties) VALUES (%lld, %Q)", 
+                         pGraph->zTableName, iNodeId, zProperties);
+  rc = sqlite3_exec(pGraph->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    return;
+  }
+
+  sqlite3_result_int64(pCtx, iNodeId);
+}
+
+/*
+** SQL function: graph_cascade_delete_node(node_id)
+** Deletes a node and all connected edges.
+** Usage: SELECT graph_cascade_delete_node(1);
+*/
+static void graphCascadeDeleteNodeFunc(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
+  sqlite3_int64 iNodeId;
+  char *zSql;
+  int rc;
+
+  if( pGraph==0 ){
+    sqlite3_result_error(pCtx, "No graph table available", -1);
+    return;
+  }
+
+  if( argc!=1 ){
+    sqlite3_result_error(pCtx, "graph_cascade_delete_node() requires 1 argument", -1);
+    return;
+  }
+
+  iNodeId = sqlite3_value_int64(argv[0]);
+
+  /* Delete all edges connected to this node */
+  zSql = sqlite3_mprintf("DELETE FROM %s_edges WHERE from_id = %lld OR to_id = %lld", 
+                         pGraph->zTableName, iNodeId, iNodeId);
+  rc = sqlite3_exec(pGraph->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    return;
+  }
+
+  /* Delete the node */
+  zSql = sqlite3_mprintf("DELETE FROM %s_nodes WHERE id = %lld", 
+                         pGraph->zTableName, iNodeId);
+  rc = sqlite3_exec(pGraph->pDb, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    return;
+  }
+
+  sqlite3_result_int64(pCtx, iNodeId);
 }

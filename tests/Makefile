@@ -17,7 +17,8 @@ INDIVIDUAL_TESTS = test_cypher_basic test_planner_compile test_executor_compile 
 
 # Additional tests that can be built
 ADDITIONAL_TESTS = test_cypher_lexer test_cypher_parser test_cypher_ast \
-                  test_extension_loading test_virtual_table_comprehensive
+                  test_extension_loading test_virtual_table_comprehensive \
+                  test_graph_updates
 
 # All test executables
 ALL_TESTS = $(INDIVIDUAL_TESTS) $(ADDITIONAL_TESTS)

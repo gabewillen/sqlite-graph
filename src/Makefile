@@ -19,6 +19,7 @@ SRCS += graph-advanced.c
 SRCS += cypher/cypher-ast.c
 
 OBJS = $(patsubst %.c,$(OBJ_DIR)/%.o,$(SRCS))
+OBJS += ../build/obj/_deps/sqlite-src/sqlite3.o
 
 # Static library for test utilities
 TEST_UTIL_SRCS = graph-util.c graph-algo.c graph-advanced.c

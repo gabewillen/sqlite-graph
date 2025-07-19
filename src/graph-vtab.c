@@ -18,6 +18,10 @@ extern const sqlite3_api_routines *sqlite3_api;
 #include "graph-vtab.h"
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
+
+/* Forward declaration for the update function */
+static int graphUpdate(sqlite3_vtab *pVtab, int argc, sqlite3_value **argv, sqlite3_int64 *pRowid);
 
 /*
 ** Virtual table module structure.
@@ -38,7 +42,7 @@ sqlite3_module graphModule = {
   graphEof,             /* xEof */
   graphColumn,          /* xColumn */
   graphRowid,           /* xRowid */
-  0,                    /* xUpdate - read-only for now */
+  graphUpdate,          /* xUpdate - now implemented */
   0,                    /* xBegin */
   0,                    /* xSync */
   0,                    /* xCommit */
@@ -107,7 +111,8 @@ int graphCreate(sqlite3 *pDb, void *pAux, int argc,
     "labels TEXT,"         /* JSON array of node labels (nodes only) */ 
     "rel_type TEXT,"       /* relationship type (edges only) */ 
     "weight REAL,"         /* edge weight (edges only) */ 
-    "properties TEXT"      /* JSON properties */ 
+    "properties TEXT,"     /* JSON properties */
+    "query TEXT HIDDEN"    /* Cypher query for INSERT/UPDATE/DELETE */
     ")" 
   );
   
@@ -121,8 +126,8 @@ int graphCreate(sqlite3 *pDb, void *pAux, int argc,
   }
 
   char *zSql = sqlite3_mprintf(
-    "CREATE TABLE %s_nodes(id INTEGER PRIMARY KEY, properties TEXT);" 
-    "CREATE TABLE %s_edges(id INTEGER PRIMARY KEY, from_id INTEGER, to_id INTEGER, weight REAL, properties TEXT);",
+    "CREATE TABLE IF NOT EXISTS %s_nodes(id INTEGER PRIMARY KEY, properties TEXT);" 
+    "CREATE TABLE IF NOT EXISTS %s_edges(id INTEGER PRIMARY KEY, from_id INTEGER, to_id INTEGER, weight REAL, properties TEXT);",
     pNew->zTableName, pNew->zTableName
   );
   rc = sqlite3_exec(pDb, zSql, 0, 0, pzErr);
@@ -185,7 +190,8 @@ int graphConnect(sqlite3 *pDb, void *pAux, int argc,
     "labels TEXT,"         /* JSON array of node labels (nodes only) */ 
     "rel_type TEXT,"       /* relationship type (edges only) */ 
     "weight REAL,"         /* edge weight (edges only) */ 
-    "properties TEXT"      /* JSON properties */ 
+    "properties TEXT,"     /* JSON properties */
+    "query TEXT HIDDEN"    /* Cypher query for INSERT/UPDATE/DELETE */
     ")" 
   );
   
@@ -196,6 +202,42 @@ int graphConnect(sqlite3 *pDb, void *pAux, int argc,
     *pzErr = sqlite3_mprintf("Failed to declare vtab schema: %s", 
                              sqlite3_errmsg(pDb));
     return rc;
+  }
+
+  /* xConnect: Connect to existing virtual table - backing tables should already exist */
+  /* But since extensions may be loaded after database open, we need to handle missing tables gracefully */
+  char *zCheckSql = sqlite3_mprintf(
+    "SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('%s_nodes', '%s_edges')",
+    pNew->zTableName, pNew->zTableName
+  );
+  
+  sqlite3_stmt *pStmt;
+  rc = sqlite3_prepare_v2(pDb, zCheckSql, -1, &pStmt, 0);
+  sqlite3_free(zCheckSql);
+  
+  int tableCount = 0;
+  if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+    tableCount = sqlite3_column_int(pStmt, 0);
+  }
+  sqlite3_finalize(pStmt);
+  
+  /* If backing tables don't exist, create them (this handles the case where
+     the virtual table was created but module wasn't loaded until now) */
+  if( tableCount != 2 ){
+    char *zCreateSql = sqlite3_mprintf(
+      "CREATE TABLE IF NOT EXISTS %s_nodes(id INTEGER PRIMARY KEY, properties TEXT);" 
+      "CREATE TABLE IF NOT EXISTS %s_edges(id INTEGER PRIMARY KEY, from_id INTEGER, to_id INTEGER, weight REAL, properties TEXT);",
+      pNew->zTableName, pNew->zTableName
+    );
+    rc = sqlite3_exec(pDb, zCreateSql, 0, 0, pzErr);
+    sqlite3_free(zCreateSql);
+
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(pNew->zDbName);
+      sqlite3_free(pNew->zTableName);
+      sqlite3_free(pNew);
+      return rc;
+    }
   }
 
   *ppVtab = &pNew->base;
@@ -215,6 +257,26 @@ int graphBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pInfo){
   char *zSql;
   sqlite3_stmt *pStmt;
   int rc;
+  int hasRowidConstraint = 0;
+  int constraintIdx = 0;
+
+  /* Debug output removed for production */
+
+  /* Check for rowid constraints (column == -1) */
+  for(int i = 0; i < pInfo->nConstraint; i++){
+    if( pInfo->aConstraint[i].usable ){
+      if( pInfo->aConstraint[i].iColumn == -1 && pInfo->aConstraint[i].op == SQLITE_INDEX_CONSTRAINT_EQ ){
+        /* This is a rowid = ? constraint - we can handle this efficiently */
+        pInfo->aConstraintUsage[i].argvIndex = ++constraintIdx;
+        pInfo->aConstraintUsage[i].omit = 1;  /* We'll handle this constraint */
+        hasRowidConstraint = 1;
+      } else {
+        /* Other constraints - let SQLite handle them */
+        pInfo->aConstraintUsage[i].argvIndex = 0;
+        pInfo->aConstraintUsage[i].omit = 0;
+      }
+    }
+  }
 
   zSql = sqlite3_mprintf("SELECT count(*) FROM %s_nodes", pGraphVtab->zTableName);
   rc = sqlite3_prepare_v2(pGraphVtab->pDb, zSql, -1, &pStmt, 0);
@@ -232,11 +294,17 @@ int graphBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pInfo){
   }
   sqlite3_finalize(pStmt);
 
-  pInfo->estimatedCost = (double)(nNodes + nEdges);
-  pInfo->estimatedRows = nNodes + nEdges;
+  if( hasRowidConstraint ){
+    /* If we have a rowid constraint, this should be very efficient */
+    pInfo->estimatedCost = 1.0;
+    pInfo->estimatedRows = 1;
+    pInfo->idxNum = 1;  /* Indicate we're using rowid lookup */
+  } else {
+    pInfo->estimatedCost = (double)(nNodes + nEdges);
+    pInfo->estimatedRows = nNodes + nEdges;
+    pInfo->idxNum = 0;  /* Full table scan */
+  }
   
-  /* No special indexing for now */
-  pInfo->idxNum = 0;
   pInfo->idxStr = 0;
   pInfo->needToFreeIdxStr = 0;
   
@@ -245,7 +313,8 @@ int graphBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pInfo){
 
 /*
 ** Disconnect from virtual table.
-** Reference counting: Decrements nRef, cleans up if zero.
+** Reference counting: Decrements nRef, cleans up memory if zero.
+** Does NOT drop backing tables - those persist across connections.
 */
 int graphDisconnect(sqlite3_vtab *pVtab){
   GraphVtab *pGraphVtab = (GraphVtab*)pVtab;
@@ -255,7 +324,10 @@ int graphDisconnect(sqlite3_vtab *pVtab){
   
   pGraphVtab->nRef--;
   if( pGraphVtab->nRef<=0 ){
-    return graphDestroy(pVtab);
+    /* Free memory but DON'T drop backing tables */
+    sqlite3_free(pGraphVtab->zDbName);
+    sqlite3_free(pGraphVtab->zTableName);
+    sqlite3_free(pGraphVtab);
   }
   
   return SQLITE_OK;
@@ -264,7 +336,7 @@ int graphDisconnect(sqlite3_vtab *pVtab){
 /*
 ** Destroy virtual table instance.
 ** Memory management: Frees all nodes, edges, and vtab structure.
-** Called during DROP TABLE or database close.
+** Called ONLY during DROP TABLE - should drop backing tables.
 */
 int graphDestroy(sqlite3_vtab *pVtab){
   GraphVtab *pGraphVtab = (GraphVtab*)pVtab;
@@ -273,7 +345,9 @@ int graphDestroy(sqlite3_vtab *pVtab){
 
   assert( pGraphVtab!=0 );
 
-  zSql = sqlite3_mprintf("DROP TABLE %s_nodes; DROP TABLE %s_edges;", pGraphVtab->zTableName, pGraphVtab->zTableName);
+  /* Only drop backing tables on explicit DROP TABLE, not on disconnect */
+  zSql = sqlite3_mprintf("DROP TABLE IF EXISTS %s_nodes; DROP TABLE IF EXISTS %s_edges;", 
+                         pGraphVtab->zTableName, pGraphVtab->zTableName);
   rc = sqlite3_exec(pGraphVtab->pDb, zSql, 0, 0, 0);
   sqlite3_free(zSql);
 
@@ -332,14 +406,13 @@ int graphClose(sqlite3_vtab_cursor *pCursor){
 */
 int graphFilter(sqlite3_vtab_cursor *pCursor, int idxNum,
                 const char *idxStr, int argc, sqlite3_value **argv){
-  (void)idxNum;
   (void)idxStr;
-  (void)argc;
-  (void)argv;
   GraphCursor *pGraphCursor = (GraphCursor*)pCursor;
   GraphVtab *pVtab = pGraphCursor->pVtab;
   char *zSql;
   int rc;
+
+  /* Debug output removed for production */
 
   sqlite3_finalize(pGraphCursor->pNodeStmt);
   pGraphCursor->pNodeStmt = 0;
@@ -348,15 +421,61 @@ int graphFilter(sqlite3_vtab_cursor *pCursor, int idxNum,
 
   pGraphCursor->iIterMode = 0;
 
-  zSql = sqlite3_mprintf("SELECT id, properties FROM %s_nodes", pVtab->zTableName);
-  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pGraphCursor->pNodeStmt, 0);
-  sqlite3_free(zSql);
-  if( rc!=SQLITE_OK ) return rc;
+  if( idxNum == 1 && argc > 0 ){
+    /* Rowid constraint - look up specific row */
+    sqlite3_int64 targetRowid = sqlite3_value_int64(argv[0]);
+    
+    if( targetRowid & (1LL << 62) ){
+      /* This is an edge rowid */
+      sqlite3_int64 edgeId = targetRowid & ~(1LL << 62);
+      zSql = sqlite3_mprintf("SELECT id, from_id, to_id, weight, properties FROM %s_edges WHERE id = %lld", 
+                             pVtab->zTableName, edgeId);
+      rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pGraphCursor->pEdgeStmt, 0);
+      sqlite3_free(zSql);
+      if( rc!=SQLITE_OK ) return rc;
+      
+      /* Skip nodes for this specific lookup */
+      pGraphCursor->iIterMode = 1;
+    } else {
+      /* This is a node rowid */
+      zSql = sqlite3_mprintf("SELECT id, properties FROM %s_nodes WHERE id = %lld", 
+                             pVtab->zTableName, targetRowid);
+      rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pGraphCursor->pNodeStmt, 0);
+      sqlite3_free(zSql);
+      if( rc!=SQLITE_OK ) return rc;
+      
+      /* Skip edges for this specific lookup */
+      pGraphCursor->iIterMode = 0;
+    }
+    
+    /* For rowid lookup, we don't need both statements */
+    if( pGraphCursor->iIterMode == 0 && !pGraphCursor->pEdgeStmt ){
+      /* Create empty edge statement to avoid issues in graphNext */
+      zSql = sqlite3_mprintf("SELECT id, from_id, to_id, weight, properties FROM %s_edges WHERE 0", pVtab->zTableName);
+      rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pGraphCursor->pEdgeStmt, 0);
+      sqlite3_free(zSql);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    
+    if( pGraphCursor->iIterMode == 1 && !pGraphCursor->pNodeStmt ){
+      /* Create empty node statement to avoid issues in graphNext */
+      zSql = sqlite3_mprintf("SELECT id, properties FROM %s_nodes WHERE 0", pVtab->zTableName);
+      rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pGraphCursor->pNodeStmt, 0);
+      sqlite3_free(zSql);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+  } else {
+    /* Full table scan */
+    zSql = sqlite3_mprintf("SELECT id, properties FROM %s_nodes", pVtab->zTableName);
+    rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pGraphCursor->pNodeStmt, 0);
+    sqlite3_free(zSql);
+    if( rc!=SQLITE_OK ) return rc;
 
-  zSql = sqlite3_mprintf("SELECT id, from_id, to_id, weight, properties FROM %s_edges", pVtab->zTableName);
-  rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pGraphCursor->pEdgeStmt, 0);
-  sqlite3_free(zSql);
-  if( rc!=SQLITE_OK ) return rc;
+    zSql = sqlite3_mprintf("SELECT id, from_id, to_id, weight, properties FROM %s_edges", pVtab->zTableName);
+    rc = sqlite3_prepare_v2(pVtab->pDb, zSql, -1, &pGraphCursor->pEdgeStmt, 0);
+    sqlite3_free(zSql);
+    if( rc!=SQLITE_OK ) return rc;
+  }
 
   return graphNext(pCursor);
 }
@@ -471,6 +590,238 @@ int graphColumn(sqlite3_vtab_cursor *pCursor, sqlite3_context *pCtx,
 */
 int graphRowid(sqlite3_vtab_cursor *pCursor, sqlite3_int64 *pRowid){
   GraphCursor *pGraphCursor = (GraphCursor*)pCursor;
-  *pRowid = pGraphCursor->iRowid;
+  if (pGraphCursor->iIterMode == 0) {
+    // Node
+    *pRowid = sqlite3_column_int64(pGraphCursor->pNodeStmt, 0);
+  } else {
+    // Edge: encode with a sentinel value
+    *pRowid = sqlite3_column_int64(pGraphCursor->pEdgeStmt, 0) | (1LL << 62);
+  }
   return SQLITE_OK;
+}
+
+/*
+** Update virtual table.
+** Handles INSERT, UPDATE, DELETE operations.
+** This function is the key to making the table writable.
+*/
+int graphUpdate(sqlite3_vtab *pVtab, int argc, sqlite3_value **argv, sqlite3_int64 *pRowid){
+  GraphVtab *pGraphVtab = (GraphVtab*)pVtab;
+  char *zErr = 0;
+  int rc = SQLITE_OK;
+
+  /* 
+   * Virtual table UPDATE operations have the following argc patterns:
+   * - DELETE: argc = 1, argv[0] = rowid
+   * - INSERT: argc = N+2, argv[0] = NULL, argv[1] = NULL, argv[2..N+1] = column values
+   * - UPDATE: argc = N+2, argv[0] = old_rowid, argv[1] = new_rowid, argv[2..N+1] = column values
+   * 
+   * Our schema is:
+   * 0: type, 1: id, 2: from_id, 3: to_id, 4: labels, 5: rel_type, 6: weight, 7: properties, 8: query
+   * So column indices for INSERT/UPDATE are: argv[2] = type, argv[3] = id, etc.
+   */
+
+  /* Remove debug output for production */
+
+  // DELETE operation
+  if (argc == 1) {
+    sqlite3_int64 rowid = sqlite3_value_int64(argv[0]);
+    char *zSql;
+    if (rowid & (1LL << 62)) { // Edge
+      zSql = sqlite3_mprintf("DELETE FROM %s_edges WHERE id = %lld", 
+                             pGraphVtab->zTableName, rowid & ~(1LL << 62));
+    } else { // Node
+      zSql = sqlite3_mprintf("DELETE FROM %s_nodes WHERE id = %lld", 
+                             pGraphVtab->zTableName, rowid);
+    }
+    rc = sqlite3_exec(pGraphVtab->pDb, zSql, 0, 0, &zErr);
+    sqlite3_free(zSql);
+  }
+  // INSERT operation (argv[0] and argv[1] are NULL)
+  else if (argc >= 11 && sqlite3_value_type(argv[0]) == SQLITE_NULL && 
+           sqlite3_value_type(argv[1]) == SQLITE_NULL) {
+    
+    const char *type = (const char *)sqlite3_value_text(argv[2]); // type column
+    
+    if (type && strcmp(type, "node") == 0) {
+      // Insert node: get id and properties
+      sqlite3_int64 node_id = 0;
+      const char *properties = "";
+      
+      // Check if id is provided (argv[3])
+      if (sqlite3_value_type(argv[3]) != SQLITE_NULL) {
+        node_id = sqlite3_value_int64(argv[3]);
+      }
+      
+      // Get properties (argv[9])
+      if (sqlite3_value_type(argv[9]) != SQLITE_NULL) {
+        properties = (const char *)sqlite3_value_text(argv[9]);
+      }
+      
+      char *zSql;
+      if (node_id > 0) {
+        // Insert with specific ID - use INSERT OR REPLACE for upsert behavior
+        zSql = sqlite3_mprintf("INSERT OR REPLACE INTO %s_nodes (id, properties) VALUES (%lld, %Q)", 
+                               pGraphVtab->zTableName, node_id, properties);
+      } else {
+        // Auto-generate ID
+        zSql = sqlite3_mprintf("INSERT INTO %s_nodes (properties) VALUES (%Q)", 
+                               pGraphVtab->zTableName, properties);
+      }
+      
+      rc = sqlite3_exec(pGraphVtab->pDb, zSql, 0, 0, &zErr);
+      sqlite3_free(zSql);
+      
+      if (rc == SQLITE_OK) {
+        if (node_id > 0) {
+          *pRowid = node_id;
+        } else {
+          *pRowid = sqlite3_last_insert_rowid(pGraphVtab->pDb);
+        }
+      }
+    } 
+    else if (type && strcmp(type, "edge") == 0) {
+      // Insert edge: need from_id, to_id, weight, properties
+      sqlite3_int64 from_id = 0, to_id = 0;
+      double weight = 0.0;
+      const char *properties = "";
+      
+      // Get from_id (argv[4])
+      if (sqlite3_value_type(argv[4]) != SQLITE_NULL) {
+        from_id = sqlite3_value_int64(argv[4]);
+      }
+      
+      // Get to_id (argv[5])
+      if (sqlite3_value_type(argv[5]) != SQLITE_NULL) {
+        to_id = sqlite3_value_int64(argv[5]);
+      }
+      
+      // Get weight (argv[8])
+      if (sqlite3_value_type(argv[8]) != SQLITE_NULL) {
+        weight = sqlite3_value_double(argv[8]);
+      }
+      
+      // Get properties (argv[9])
+      if (sqlite3_value_type(argv[9]) != SQLITE_NULL) {
+        properties = (const char *)sqlite3_value_text(argv[9]);
+      }
+      
+      // Ensure both nodes exist before creating edge
+      char *zCheckSql = sqlite3_mprintf(
+        "SELECT EXISTS(SELECT 1 FROM %s_nodes WHERE id = %lld) AND "
+        "EXISTS(SELECT 1 FROM %s_nodes WHERE id = %lld)",
+        pGraphVtab->zTableName, from_id, pGraphVtab->zTableName, to_id);
+      
+      sqlite3_stmt *pStmt;
+      rc = sqlite3_prepare_v2(pGraphVtab->pDb, zCheckSql, -1, &pStmt, 0);
+      sqlite3_free(zCheckSql);
+      
+      if (rc == SQLITE_OK) {
+        if (sqlite3_step(pStmt) == SQLITE_ROW && sqlite3_column_int(pStmt, 0) == 1) {
+          // Both nodes exist, create edge
+          sqlite3_finalize(pStmt);
+          
+          char *zSql = sqlite3_mprintf(
+            "INSERT INTO %s_edges (from_id, to_id, weight, properties) VALUES (%lld, %lld, %f, %Q)", 
+            pGraphVtab->zTableName, from_id, to_id, weight, properties);
+          
+          rc = sqlite3_exec(pGraphVtab->pDb, zSql, 0, 0, &zErr);
+          sqlite3_free(zSql);
+          
+          if (rc == SQLITE_OK) {
+            *pRowid = sqlite3_last_insert_rowid(pGraphVtab->pDb) | (1LL << 62);
+          }
+        } else {
+          // One or both nodes don't exist
+          sqlite3_finalize(pStmt);
+          rc = SQLITE_CONSTRAINT;
+          zErr = sqlite3_mprintf("Referenced nodes %lld and/or %lld do not exist", from_id, to_id);
+        }
+      } else {
+        sqlite3_finalize(pStmt);
+      }
+    } else {
+      rc = SQLITE_MISUSE;
+      zErr = sqlite3_mprintf("Invalid type '%s' - must be 'node' or 'edge'", type ? type : "NULL");
+    }
+  }
+  // UPDATE operation
+  else if (argc >= 11) {
+    sqlite3_int64 old_rowid = sqlite3_value_int64(argv[0]);
+    sqlite3_int64 new_rowid = sqlite3_value_int64(argv[1]);
+    
+    // If rowid is changing, that's not supported for now
+    if (old_rowid != new_rowid) {
+      rc = SQLITE_MISUSE;
+      zErr = sqlite3_mprintf("Changing rowid is not supported");
+    } else {
+      char *zSql;
+      if (old_rowid & (1LL << 62)) { // Edge
+        // Update edge
+        sqlite3_int64 edge_id = old_rowid & ~(1LL << 62);
+        char *zUpdates[4] = {0, 0, 0, 0};
+        int nUpdates = 0;
+
+        // from_id (argv[4])
+        if (sqlite3_value_type(argv[4]) != SQLITE_NULL) {
+          zUpdates[nUpdates++] = sqlite3_mprintf("from_id = %lld", sqlite3_value_int64(argv[4]));
+        }
+        
+        // to_id (argv[5])
+        if (sqlite3_value_type(argv[5]) != SQLITE_NULL) {
+          zUpdates[nUpdates++] = sqlite3_mprintf("to_id = %lld", sqlite3_value_int64(argv[5]));
+        }
+        
+        // weight (argv[8])
+        if (sqlite3_value_type(argv[8]) != SQLITE_NULL) {
+          zUpdates[nUpdates++] = sqlite3_mprintf("weight = %f", sqlite3_value_double(argv[8]));
+        }
+        
+        // properties (argv[9])
+        if (sqlite3_value_type(argv[9]) != SQLITE_NULL) {
+          zUpdates[nUpdates++] = sqlite3_mprintf("properties = %Q", sqlite3_value_text(argv[9]));
+        }
+
+        if (nUpdates > 0) {
+          // Build UPDATE statement
+          char *zJoinedUpdates = sqlite3_mprintf("%s", zUpdates[0]);
+          for (int i = 1; i < nUpdates; i++) {
+            char *zTemp = zJoinedUpdates;
+            zJoinedUpdates = sqlite3_mprintf("%s, %s", zTemp, zUpdates[i]);
+            sqlite3_free(zTemp);
+          }
+
+          zSql = sqlite3_mprintf("UPDATE %s_edges SET %s WHERE id = %lld", 
+                                 pGraphVtab->zTableName, zJoinedUpdates, edge_id);
+          rc = sqlite3_exec(pGraphVtab->pDb, zSql, 0, 0, &zErr);
+          sqlite3_free(zSql);
+          sqlite3_free(zJoinedUpdates);
+        }
+
+        // Free update strings
+        for (int i = 0; i < nUpdates; i++) {
+          sqlite3_free(zUpdates[i]);
+        }
+      } else { // Node
+        // Update node properties only (argv[9])
+        if (sqlite3_value_type(argv[9]) != SQLITE_NULL) {
+          const char *properties = (const char *)sqlite3_value_text(argv[9]);
+          zSql = sqlite3_mprintf("UPDATE %s_nodes SET properties = %Q WHERE id = %lld", 
+                                 pGraphVtab->zTableName, properties, old_rowid);
+          rc = sqlite3_exec(pGraphVtab->pDb, zSql, 0, 0, &zErr);
+          sqlite3_free(zSql);
+        }
+      }
+    }
+  } else {
+    rc = SQLITE_MISUSE;
+    zErr = sqlite3_mprintf("Invalid number of arguments: %d", argc);
+  }
+
+  if (rc != SQLITE_OK && zErr) {
+    pVtab->zErrMsg = sqlite3_mprintf("graph operation failed: %s", zErr);
+    sqlite3_free(zErr);
+  }
+
+  return rc;
 }
