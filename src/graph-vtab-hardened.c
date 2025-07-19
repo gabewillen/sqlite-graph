@@ -446,7 +446,12 @@ int graphRowid(sqlite3_vtab_cursor *cur, sqlite3_int64 *pRowid) {
 int graphUpdate(sqlite3_vtab *pVTab, int argc, sqlite3_value **argv,
                        sqlite3_int64 *pRowid) {
   GraphVtab *pGraph = (GraphVtab*)pVTab;
+  printf("DEBUG: graphUpdate called with argc=%d\n", argc);
   GRAPH_MEMORY_GUARD_BEGIN(mem_ctx);
+  printf("DEBUG: argc=%d, type=%s\n", argc, argc > 3 ? (const char*)sqlite3_value_text(argv[3]) : "NULL");
+    for(int i = 0; i < argc; i++) {
+      printf("DEBUG: argv[%d] = %s\n", i, sqlite3_value_text(argv[i]) ? (const char*)sqlite3_value_text(argv[i]) : "NULL");
+    }
   char *zSql;
   int rc = SQLITE_OK;
   
@@ -481,13 +486,15 @@ int graphUpdate(sqlite3_vtab *pVTab, int argc, sqlite3_value **argv,
       }
     }
   } else if (argc > 1) {
+    printf("DEBUG: INSERT/UPDATE branch, argc=%d\n", argc);
     /* INSERT or UPDATE operation */
-    const char *type = (const char*)sqlite3_value_text(argv[2]); /* Column 1: type */
+    const char *type = (const char*)sqlite3_value_text(argv[3]); /* Column 1: type */
+    printf("DEBUG: type retrieved: \"%s\", comparing with \"node\"\n", type ? type : "NULL");
     
     if (type && strcmp(type, "node") == 0) {
       /* Node operation */
-      sqlite3_int64 id = sqlite3_value_int64(argv[1]); /* Column 0: id */
-      const char *properties = (const char*)sqlite3_value_text(argv[6]); /* Column 5: properties */
+      sqlite3_int64 id = sqlite3_value_int64(argv[2]); /* Column 0: id */
+      const char *properties = (const char*)sqlite3_value_text(argv[7]); /* Column 5: properties */
       
       zSql = graph_mprintf_safe(&mem_ctx, 
         "INSERT OR REPLACE INTO %s_nodes(id, properties) VALUES(?, ?)", 
@@ -497,22 +504,27 @@ int graphUpdate(sqlite3_vtab *pVTab, int argc, sqlite3_value **argv,
         sqlite3_stmt *pStmt;
         rc = sqlite3_prepare_v2(pGraph->pDb, zSql, -1, &pStmt, 0);
         if (rc == SQLITE_OK) {
+          if (sqlite3_value_type(argv[2]) != SQLITE_NULL) {
           sqlite3_bind_int64(pStmt, 1, id);
+        } else {
+          sqlite3_bind_null(pStmt, 1);
+        }
+        printf("DEBUG: Binding properties: %s\n", properties ? properties : "NULL");
           sqlite3_bind_text(pStmt, 2, properties, -1, SQLITE_TRANSIENT);
           rc = sqlite3_step(pStmt);
           sqlite3_finalize(pStmt);
           if (rc == SQLITE_DONE) {
             rc = SQLITE_OK;
-            *pRowid = id;
+            *pRowid = (sqlite3_value_type(argv[2]) != SQLITE_NULL) ? id : sqlite3_last_insert_rowid(pGraph->pDb);
           }
         }
       }
     } else if (type && strcmp(type, "edge") == 0) {
       /* Edge operation */
-      sqlite3_int64 from_id = sqlite3_value_int64(argv[3]); /* Column 2: from_id */
-      sqlite3_int64 to_id = sqlite3_value_int64(argv[4]); /* Column 3: to_id */
-      double weight = sqlite3_value_double(argv[5]); /* Column 4: weight */
-      const char *properties = (const char*)sqlite3_value_text(argv[6]); /* Column 5: properties */
+      sqlite3_int64 from_id = sqlite3_value_int64(argv[4]); /* Column 2: from_id */
+      sqlite3_int64 to_id = sqlite3_value_int64(argv[5]); /* Column 3: to_id */
+      double weight = sqlite3_value_double(argv[6]); /* Column 4: weight */
+      const char *properties = (const char*)sqlite3_value_text(argv[7]); /* Column 5: properties */
       
       zSql = graph_mprintf_safe(&mem_ctx,
         "INSERT INTO %s_edges(from_id, to_id, weight, properties) VALUES(?, ?, ?, ?)",

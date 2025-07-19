@@ -67,3 +67,13 @@ test_hardened: harden
 	@echo "Testing hardened memory management..."
 	$(MAKE) test SANITIZE=1
 	@echo "Hardened memory tests complete!"
+
+# Test Go operations in C
+test_go_operations: $(BUILD_DIR)/tests/test_go_operations
+	@echo "Running Go operations test in C..."
+	@$(BUILD_DIR)/tests/test_go_operations
+
+$(BUILD_DIR)/tests/test_go_operations: tests/test_go_operations.c $(BUILD_DIR)/libgraph_static.a
+	@mkdir -p $(BUILD_DIR)/tests
+	gcc -I./include -I./src -I./_deps/sqlite-src -I./_deps/Unity-2.5.2/src -g -O0 -std=gnu99 \
+		-o $@ tests/test_go_operations.c -lsqlite3 -lm -ldl -lpthread

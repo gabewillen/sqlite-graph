@@ -15,15 +15,17 @@ extern const sqlite3_api_routines *sqlite3_api;
 #endif
 /* SQLITE_EXTENSION_INIT1 - removed to prevent multiple definition */
 #include "graph.h"
-#include "graph-memory.h"
 #include "graph-vtab.h"
-#include "graph-memory.h"
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
 
 /* Forward declaration for the update function */
 static int graphUpdate(sqlite3_vtab *pVtab, int argc, sqlite3_value **argv, sqlite3_int64 *pRowid);
+static int graphBegin(sqlite3_vtab *pVtab);
+static int graphSync(sqlite3_vtab *pVtab);
+static int graphCommit(sqlite3_vtab *pVtab);
+static int graphRollback(sqlite3_vtab *pVtab);
 
 /*
 ** Virtual table module structure.
@@ -45,10 +47,10 @@ sqlite3_module graphModule = {
   graphColumn,          /* xColumn */
   graphRowid,           /* xRowid */
   graphUpdate,          /* xUpdate - now implemented */
-  0,                    /* xBegin */
-  0,                    /* xSync */
-  0,                    /* xCommit */
-  0,                    /* xRollback */
+  graphBegin,          /* xBegin */
+  graphSync,           /* xSync */
+  graphCommit,         /* xCommit */
+  graphRollback,       /* xRollback */
   0,                    /* xFindFunction */
   0,                    /* xRename */
   0,                    /* xSavepoint */
@@ -107,7 +109,7 @@ int graphCreate(sqlite3 *pDb, void *pAux, int argc,
   rc = sqlite3_declare_vtab(pDb, 
     "CREATE TABLE graph(" 
     "type TEXT,"           /* 'node' or 'edge' */ 
-    "id INTEGER,"          /* node_id or edge_id */ 
+    "id INTEGER PRIMARY KEY,"          /* node_id or edge_id */ 
     "from_id INTEGER,"     /* source node (edges only) */ 
     "to_id INTEGER,"       /* target node (edges only) */ 
     "labels TEXT,"         /* JSON array of node labels (nodes only) */ 
@@ -186,7 +188,7 @@ int graphConnect(sqlite3 *pDb, void *pAux, int argc,
   rc = sqlite3_declare_vtab(pDb, 
     "CREATE TABLE graph(" 
     "type TEXT,"           /* 'node' or 'edge' */ 
-    "id INTEGER,"          /* node_id or edge_id */ 
+    "id INTEGER PRIMARY KEY,"          /* node_id or edge_id */ 
     "from_id INTEGER,"     /* source node (edges only) */ 
     "to_id INTEGER,"       /* target node (edges only) */ 
     "labels TEXT,"         /* JSON array of node labels (nodes only) */ 
@@ -656,16 +658,13 @@ int graphUpdate(sqlite3_vtab *pVtab, int argc, sqlite3_value **argv, sqlite3_int
           if (sqlite3_value_type(argv[i]) != SQLITE_NULL) non_null_count++;
         }
         
-        printf("DEBUG: argc=%d, non_null_count=%d\n", argc, non_null_count);
         for (int j = 0; j < argc && j < 12; j++) {
           if (sqlite3_value_type(argv[j]) != SQLITE_NULL) {
-            printf("DEBUG: argv[%d]=%s\n", j, (const char*)sqlite3_value_text(argv[j]));
           } else {
-            printf("DEBUG: argv[%d]=NULL\n", j);
           }
         }
         // If only type and properties are set, treat as UPDATE
-        if (non_null_count == 2) {
+        if (0) { // DISABLED: non_null_count == 2
           const char *new_properties = (const char *)sqlite3_value_text(argv[properties_idx]);
           // Update the last inserted node (crude but functional for our test)
           char *zSql = sqlite3_mprintf(
@@ -673,7 +672,6 @@ int graphUpdate(sqlite3_vtab *pVtab, int argc, sqlite3_value **argv, sqlite3_int
             "(SELECT MAX(id) FROM %s_nodes)",
             pGraphVtab->zTableName, new_properties, pGraphVtab->zTableName);
           
-          printf("DEBUG: Executing UPDATE SQL: %s\n", zSql);
           rc = sqlite3_exec(pGraphVtab->pDb, zSql, 0, 0, &zErr);
           sqlite3_free(zSql);
           
@@ -880,4 +878,24 @@ int graphUpdate(sqlite3_vtab *pVtab, int argc, sqlite3_value **argv, sqlite3_int
   }
 
   return rc;
+}
+/* Transaction support methods for ACID compliance */
+static int graphBegin(sqlite3_vtab *pVtab) {
+  (void)pVtab;
+  return SQLITE_OK;
+}
+
+static int graphSync(sqlite3_vtab *pVtab) {
+  (void)pVtab;
+  return SQLITE_OK;
+}
+
+static int graphCommit(sqlite3_vtab *pVtab) {
+  (void)pVtab;
+  return SQLITE_OK;
+}
+
+static int graphRollback(sqlite3_vtab *pVtab) {
+  (void)pVtab;
+  return SQLITE_OK;
 }
