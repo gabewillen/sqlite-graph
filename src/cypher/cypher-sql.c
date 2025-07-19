@@ -16,11 +16,16 @@
 */
 
 #include "sqlite3ext.h"
+#include "cypher-parser.h"
+#include "cypher-lexer.h"
+static char *cypherParseTestQuery(const char *zQuery);
+static int cypherLexerTokenize(CypherLexer *pLexer);
+static char *cypherAstToString(CypherAst *pAst);
+static int cypherAstValidate(CypherAst *pAst, char **pzErrMsg);
 #ifndef SQLITE_CORE
 extern const sqlite3_api_routines *sqlite3_api;
 #endif
 /* SQLITE_EXTENSION_INIT1 - removed to prevent multiple definition */
-#include "cypher.h"
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>

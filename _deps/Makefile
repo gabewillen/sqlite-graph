@@ -9,7 +9,7 @@ all: ../build/libsqlite3.a ../build/libunity.a
 
 ../build/obj/_deps/sqlite-src/sqlite3.o:
 	mkdir -p ../build/obj/_deps/sqlite-src
-	$(CC) $(CFLAGS) -fPIC -Wno-implicit-fallthrough -c sqlite-src/sqlite3.c -o $@
+	$(CC) $(CFLAGS) -fPIC -Wno-implicit-fallthrough -DSQLITE_ENABLE_LOAD_EXTENSION=1 -c sqlite-src/sqlite3.c -o $@
 
 ../build/libunity.a: Unity-2.5.2/src/unity.o
 	ar rcs $@ $^

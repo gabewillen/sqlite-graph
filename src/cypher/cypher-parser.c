@@ -20,6 +20,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 #endif
 
 #include "cypher.h"
+#include "cypher-errors.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -159,6 +160,60 @@ CypherAst *cypherParse(CypherParser *pParser, const char *zQuery, char **pzErrMs
 
     cypherLexerDestroy(pLexer);
     return pParser->pAst;
+}
+
+/*
+** Validate a Cypher query without executing it.
+** Returns SQLITE_OK if valid, error code with details if invalid.
+** This function parses the query and performs basic semantic validation.
+*/
+int cypherValidateQuery(const char *zQuery, char **pzError) {
+    if (!zQuery) {
+        if (pzError) *pzError = sqlite3_mprintf("Query string is NULL");
+        return CYPHER_ERROR_SYNTAX_GENERAL;
+    }
+    
+    CypherParser *pParser = cypherParserCreate();
+    if (!pParser) {
+        if (pzError) *pzError = sqlite3_mprintf("Failed to create parser");
+        return SQLITE_NOMEM;
+    }
+    
+    char *parseError = NULL;
+    CypherAst *pAst = cypherParse(pParser, zQuery, &parseError);
+    
+    int result = SQLITE_OK;
+    
+    if (!pAst) {
+        /* Parse error */
+        result = CYPHER_ERROR_SYNTAX_GENERAL;
+        if (pzError) {
+            if (parseError) {
+                *pzError = sqlite3_mprintf("Syntax error: %s", parseError);
+            } else {
+                *pzError = sqlite3_mprintf("Syntax error: Invalid Cypher query");
+            }
+        }
+    } else {
+        /* Parsing succeeded, perform basic semantic validation */
+        /* For now, we just check that we have a valid AST structure */
+        /* TODO: Add more comprehensive semantic validation */
+        
+        if (cypherAstGetChildCount(pAst) == 0) {
+            result = CYPHER_ERROR_SEMANTIC_UNDEFINED_VARIABLE;
+            if (pzError) *pzError = sqlite3_mprintf("Semantic error: Empty query");
+        }
+        
+        /* Clean up AST */
+        cypherAstDestroy(pAst);
+    }
+    
+    if (parseError) {
+        free(parseError);
+    }
+    
+    cypherParserDestroy(pParser);
+    return result;
 }
 
 static CypherAst *parseQuery(CypherLexer *pLexer, CypherParser *pParser) {

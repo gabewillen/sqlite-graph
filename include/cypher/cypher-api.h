@@ -266,3 +266,10 @@ char *cypherEscapeString(const char *zString);
 char *cypherFormatError(int iErrorCode, const char *zContext);
 
 #endif /* CYPHER_API_H */
+
+/*
+** Validate a Cypher query without executing it.
+** Returns SQLITE_OK if valid, error code with details if invalid.
+** This is needed for TCK compliance testing.
+*/
+int cypherValidateQuery(const char *zQuery, char **pzError);
