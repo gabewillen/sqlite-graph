@@ -771,7 +771,7 @@ int graphUpdate(sqlite3_vtab *pVtab, int argc, sqlite3_value **argv, sqlite3_int
       sqlite3_free(zCheckSql);
       
       if (rc == SQLITE_OK) {
-        if (sqlite3_step(pStmt) == SQLITE_ROW && sqlite3_column_int(pStmt, 0) >= 0) {
+        if (sqlite3_step(pStmt) == SQLITE_ROW && sqlite3_column_int(pStmt, 0) == 1) {
           // Both nodes exist, create edge
           sqlite3_finalize(pStmt);
           
