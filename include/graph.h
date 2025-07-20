@@ -71,6 +71,8 @@ struct GraphVtab {
   sqlite3 *pDb;           /* Database connection */
   char *zDbName;          /* Database name ("main", "temp", etc.) */
   char *zTableName;       /* Name of the virtual table */
+  char *zNodeTableName;   /* Name of the backing nodes table */
+  char *zEdgeTableName;   /* Name of the backing edges table */
   int nRef;               /* Reference count */
   void *pLabelIndex;  /* Label-based node index */
   void *pPropertyIndex; /* Property-based index */

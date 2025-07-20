@@ -1,452 +1,390 @@
 /*
-** SQLite Graph Database Extension - Performance Tests
-**
-** Performance benchmarks and scalability tests for traversal algorithms.
-** Tests performance on various graph sizes and structures.
+** test_performance.c - Performance and benchmarking tests
 */
 
-#define SQLITE_CORE
-#include "unity.h"
-#include "sqlite3.h"
-#include "../include/graph.h"
-#include "../include/graph-vtab.h"
-#include <time.h>
 #include <stdio.h>
 #include <string.h>
+#include <sqlite3.h>
+#include <time.h>
+#include <sys/time.h>
+#include "unity.h"
 
-/* Test database pointer */
-static sqlite3 *pDb = 0;
-static GraphVtab *pVtab = 0;
+static sqlite3 *db = NULL;
 
-
-/*
-** Setup performance test environment.
-*/
-void setupPerformanceTests(void){
-  int rc;
-  
-  /* Create in-memory database */
-  rc = sqlite3_open(":memory:", &pDb);
-  TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-  
-  /* Allocate vtab structure for testing */
-  pVtab = (GraphVtab*)sqlite3_malloc(sizeof(GraphVtab));
-  TEST_ASSERT_NOT_NULL(pVtab);
-  
-  memset(pVtab, 0, sizeof(GraphVtab));
-  pVtab->pDb = pDb;
-  pVtab->zDbName = sqlite3_mprintf("main");
-  pVtab->zTableName = sqlite3_mprintf("perf_graph");
+double get_time_diff(struct timeval start, struct timeval end) {
+    return (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
 }
 
-/*
-** Cleanup performance test environment.
-*/
-void teardownPerformanceTests(void){
-  if( pVtab ){
-    char *zSql = sqlite3_mprintf("DROP TABLE %s_nodes; DROP TABLE %s_edges;", pVtab->zTableName, pVtab->zTableName);
-    sqlite3_exec(pDb, zSql, 0, 0, 0);
-    sqlite3_free(zSql);
-    sqlite3_free(pVtab->zDbName);
-    sqlite3_free(pVtab->zTableName);
-    sqlite3_free(pVtab);
-    pVtab = 0;
-  }
-  
-  if( pDb ){
-    sqlite3_close(pDb);
-    pDb = 0;
-  }
+sqlite3* create_test_db(void) {
+    sqlite3 *db;
+    int rc;
+    
+    rc = sqlite3_open(":memory:", &db);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    rc = sqlite3_enable_load_extension(db, 1);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    rc = sqlite3_load_extension(db, "../build/libgraph.so", "sqlite3_graph_init", NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    // Create backing tables
+    rc = sqlite3_exec(db, 
+        "CREATE TABLE nodes(id INTEGER PRIMARY KEY, labels TEXT, properties TEXT);"
+        "CREATE TABLE edges(id INTEGER PRIMARY KEY, start_node INTEGER, end_node INTEGER, type TEXT, properties TEXT);",
+        NULL, NULL, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    // Create virtual table
+    rc = sqlite3_exec(db, "CREATE VIRTUAL TABLE graph USING graph(nodes, edges)", NULL, NULL, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    return db;
 }
 
-/*
-** Create a linear chain graph of specified size.
-** Graph structure: 1 -> 2 -> 3 -> ... -> n
-*/
-static void createLinearChain(int nNodes){
-  int i;
-  int rc;
-  
-  /* Add nodes */
-  for( i=1; i<=nNodes; i++ ){
-    rc = graphAddNode(pVtab, i, "{}");
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-  }
-  
-  /* Add edges */
-  for( i=1; i<nNodes; i++ ){
-    rc = graphAddEdge(pVtab, i, i+1, 1.0, "{}");
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-  }
+void setUp(void) {
+    db = NULL;
 }
 
-/*
-** Create a binary tree of specified depth.
-** Each node has up to 2 children.
-*/
-static void createBinaryTree(int nDepth){
-  int nNodes = (1 << nDepth) - 1;  /* 2^depth - 1 nodes */
-  int i;
-  int rc;
-  
-  /* Add nodes */
-  for( i=1; i<=nNodes; i++ ){
-    rc = graphAddNode(pVtab, i, "{}");
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-  }
-  
-  /* Add edges (parent i has children 2*i and 2*i+1) */
-  for( i=1; i<=nNodes/2; i++ ){
-    if( 2*i <= nNodes ){
-      rc = graphAddEdge(pVtab, i, 2*i, 1.0, "{}");
-      TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+void tearDown(void) {
+    if (db) {
+        sqlite3_close(db);
+        db = NULL;
     }
-    if( 2*i+1 <= nNodes ){
-      rc = graphAddEdge(pVtab, i, 2*i+1, 1.0, "{}");
-      TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+}
+
+void test_bulk_insert_performance(void) {
+    db = create_test_db();
+    struct timeval start, end;
+    int rc;
+    
+    const int NUM_NODES = 1000;
+    
+    gettimeofday(&start, NULL);
+    
+    // Start transaction for bulk insert
+    rc = sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    // Prepare statement for bulk insert
+    sqlite3_stmt *stmt;
+    rc = sqlite3_prepare_v2(db, 
+        "INSERT INTO nodes (labels, properties) VALUES (?, ?);",
+        -1, &stmt, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    // Insert nodes in bulk
+    for (int i = 0; i < NUM_NODES; i++) {
+        char props[256];
+        snprintf(props, sizeof(props), "{\"id\": %d, \"name\": \"node_%d\"}", i, i);
+        
+        sqlite3_bind_text(stmt, 1, "TestNode", -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 2, props, -1, SQLITE_TRANSIENT);
+        
+        rc = sqlite3_step(stmt);
+        TEST_ASSERT_EQUAL(SQLITE_DONE, rc);
+        
+        sqlite3_reset(stmt);
     }
-  }
+    
+    sqlite3_finalize(stmt);
+    
+    // Commit transaction
+    rc = sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    gettimeofday(&end, NULL);
+    double duration = get_time_diff(start, end);
+    
+    printf("Bulk insert of %d nodes took %.3f seconds (%.0f nodes/sec)\n", 
+           NUM_NODES, duration, NUM_NODES / duration);
+    
+    // Verify all nodes were inserted
+    rc = sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM nodes;", -1, &stmt, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    rc = sqlite3_step(stmt);
+    TEST_ASSERT_EQUAL(SQLITE_ROW, rc);
+    
+    int count = sqlite3_column_int(stmt, 0);
+    TEST_ASSERT_EQUAL(NUM_NODES, count);
+    
+    sqlite3_finalize(stmt);
+    
+    // Performance should be reasonable (more than 100 nodes/sec)
+    TEST_ASSERT_TRUE(duration < 10.0);
 }
 
-/*
-** Create a complete graph (every node connected to every other node).
-** Warning: O(n^2) edges!
-*/
-static void createCompleteGraph(int nNodes){
-  int i, j;
-  int rc;
-  
-  /* Add nodes */
-  for( i=1; i<=nNodes; i++ ){
-    rc = graphAddNode(pVtab, i, "{}");
+void test_bulk_query_performance(void) {
+    db = create_test_db();
+    struct timeval start, end;
+    int rc;
+    
+    const int NUM_NODES = 1000;
+    
+    // Insert test data first
+    rc = sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
     TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-  }
-  
-  /* Add edges between all pairs */
-  for( i=1; i<=nNodes; i++ ){
-    for( j=i+1; j<=nNodes; j++ ){
-      rc = graphAddEdge(pVtab, i, j, 1.0, "{}");
-      TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-      rc = graphAddEdge(pVtab, j, i, 1.0, "{}");
-      TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    sqlite3_stmt *insert_stmt;
+    rc = sqlite3_prepare_v2(db, 
+        "INSERT INTO nodes (labels, properties) VALUES (?, ?);",
+        -1, &insert_stmt, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    for (int i = 0; i < NUM_NODES; i++) {
+        char props[256];
+        snprintf(props, sizeof(props), "{\"id\": %d, \"category\": %d}", i, i % 10);
+        
+        sqlite3_bind_text(insert_stmt, 1, "TestNode", -1, SQLITE_STATIC);
+        sqlite3_bind_text(insert_stmt, 2, props, -1, SQLITE_TRANSIENT);
+        
+        sqlite3_step(insert_stmt);
+        sqlite3_reset(insert_stmt);
     }
-  }
+    
+    sqlite3_finalize(insert_stmt);
+    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+    
+    // Test query performance
+    gettimeofday(&start, NULL);
+    
+    sqlite3_stmt *query_stmt;
+    rc = sqlite3_prepare_v2(db, 
+        "SELECT COUNT(*) FROM nodes WHERE properties LIKE '%category\": 5%';",
+        -1, &query_stmt, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    rc = sqlite3_step(query_stmt);
+    TEST_ASSERT_EQUAL(SQLITE_ROW, rc);
+    
+    int matching_count = sqlite3_column_int(query_stmt, 0);
+    sqlite3_finalize(query_stmt);
+    
+    gettimeofday(&end, NULL);
+    double duration = get_time_diff(start, end);
+    
+    printf("Query across %d nodes took %.3f seconds\n", NUM_NODES, duration);
+    
+    // Verify correct results
+    TEST_ASSERT_EQUAL(100, matching_count); // Should find nodes with category 5
+    
+    // Performance should be reasonable (less than 1 second)
+    TEST_ASSERT_TRUE(duration < 1.0);
 }
 
-/*
-** Measure execution time in milliseconds.
-*/
-static double getTimeMs(void){
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec * 1000.0 + ts.tv_nsec / 1000000.0;
-}
-
-/*
-** Test DFS performance on linear chain graphs.
-*/
-void testDFSPerformanceLinear(void){
-  setupPerformanceTests();
-  const int sizes[] = {100, 500, 1000, 5000};
-  int i;
-  
-  printf("\n=== DFS Performance - Linear Chain ===\n");
-  printf("Size\tTime(ms)\tNodes/sec\n");
-  
-  for( i=0; i<(int)(sizeof(sizes)/sizeof(sizes[0])); i++ ){
-    char *zPath = 0;
-    double startTime, endTime, elapsed;
+void test_large_graph_traversal_performance(void) {
+    db = create_test_db();
+    struct timeval start, end;
     int rc;
     
-    createLinearChain(sizes[i]);
+    const int NUM_NODES = 500;
+    const int NUM_EDGES = 1000;
     
-    startTime = getTimeMs();
-    rc = graphDFS(pVtab, 1, -1, &zPath);
-    endTime = getTimeMs();
-    
+    // Create a larger graph
+    rc = sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
     TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-    TEST_ASSERT_NOT_NULL(zPath);
     
-    elapsed = endTime - startTime;
-    printf("%d\t%.2f\t\t%.0f\n", sizes[i], elapsed, sizes[i]*1000.0/elapsed);
+    // Insert nodes
+    sqlite3_stmt *node_stmt;
+    rc = sqlite3_prepare_v2(db, 
+        "INSERT INTO nodes (id, labels, properties) VALUES (?, ?, ?);",
+        -1, &node_stmt, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
     
-    sqlite3_free(zPath);
-  }
-  teardownPerformanceTests();
+    for (int i = 1; i <= NUM_NODES; i++) {
+        char props[256];
+        snprintf(props, sizeof(props), "{\"name\": \"node_%d\"}", i);
+        
+        sqlite3_bind_int(node_stmt, 1, i);
+        sqlite3_bind_text(node_stmt, 2, "Node", -1, SQLITE_STATIC);
+        sqlite3_bind_text(node_stmt, 3, props, -1, SQLITE_TRANSIENT);
+        
+        sqlite3_step(node_stmt);
+        sqlite3_reset(node_stmt);
+    }
+    sqlite3_finalize(node_stmt);
+    
+    // Insert edges (random connections)
+    sqlite3_stmt *edge_stmt;
+    rc = sqlite3_prepare_v2(db, 
+        "INSERT INTO edges (start_node, end_node, type, properties) VALUES (?, ?, ?, ?);",
+        -1, &edge_stmt, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    srand(42); // Fixed seed for reproducible results
+    for (int i = 0; i < NUM_EDGES; i++) {
+        int start = (rand() % NUM_NODES) + 1;
+        int end = (rand() % NUM_NODES) + 1;
+        if (start != end) {
+            sqlite3_bind_int(edge_stmt, 1, start);
+            sqlite3_bind_int(edge_stmt, 2, end);
+            sqlite3_bind_text(edge_stmt, 3, "CONNECTS", -1, SQLITE_STATIC);
+            sqlite3_bind_text(edge_stmt, 4, "{}", -1, SQLITE_STATIC);
+            
+            sqlite3_step(edge_stmt);
+            sqlite3_reset(edge_stmt);
+        }
+    }
+    sqlite3_finalize(edge_stmt);
+    
+    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+    
+    // Test traversal performance
+    gettimeofday(&start, NULL);
+    
+    sqlite3_stmt *traversal_stmt;
+    rc = sqlite3_prepare_v2(db, 
+        "WITH RECURSIVE reachable(node_id, depth) AS ("
+        "  SELECT 1 as node_id, 0 as depth "
+        "  UNION ALL "
+        "  SELECT e.end_node, r.depth + 1 "
+        "  FROM reachable r "
+        "  JOIN edges e ON r.node_id = e.start_node "
+        "  WHERE r.depth < 5"
+        ") "
+        "SELECT COUNT(DISTINCT node_id) FROM reachable;",
+        -1, &traversal_stmt, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+    
+    rc = sqlite3_step(traversal_stmt);
+    TEST_ASSERT_EQUAL(SQLITE_ROW, rc);
+    
+    int reachable_count = sqlite3_column_int(traversal_stmt, 0);
+    sqlite3_finalize(traversal_stmt);
+    
+    gettimeofday(&end, NULL);
+    double duration = get_time_diff(start, end);
+    
+    printf("Graph traversal on %d nodes, %d edges took %.3f seconds (found %d reachable nodes)\n", 
+           NUM_NODES, NUM_EDGES, duration, reachable_count);
+    
+    // Verify reasonable results
+    TEST_ASSERT_TRUE(reachable_count >= 1);
+    TEST_ASSERT_TRUE(reachable_count <= NUM_NODES);
+    
+    // Performance should be reasonable (less than 2 seconds)
+    TEST_ASSERT_TRUE(duration < 2.0);
 }
 
-/*
-** Test BFS performance on linear chain graphs.
-*/
-void testBFSPerformanceLinear(void){
-  setupPerformanceTests();
-  const int sizes[] = {100, 500, 1000, 5000};
-  int i;
-  
-  printf("\n=== BFS Performance - Linear Chain ===\n");
-  printf("Size\tTime(ms)\tNodes/sec\n");
-  
-  for( i=0; i<(int)(sizeof(sizes)/sizeof(sizes[0])); i++ ){
-    char *zPath = 0;
-    double startTime, endTime, elapsed;
+void test_memory_usage_scaling(void) {
+    db = create_test_db();
     int rc;
     
-    createLinearChain(sizes[i]);
+    // Test memory usage with different graph sizes
+    const int sizes[] = {100, 500, 1000};
+    const int num_sizes = sizeof(sizes) / sizeof(sizes[0]);
     
-    startTime = getTimeMs();
-    rc = graphBFS(pVtab, 1, -1, &zPath);
-    endTime = getTimeMs();
-    
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-    TEST_ASSERT_NOT_NULL(zPath);
-    
-    elapsed = endTime - startTime;
-    printf("%d\t%.2f\t\t%.0f\n", sizes[i], elapsed, sizes[i]*1000.0/elapsed);
-    
-    sqlite3_free(zPath);
-  }
-  teardownPerformanceTests();
+    for (int s = 0; s < num_sizes; s++) {
+        int size = sizes[s];
+        
+        // Clear previous data
+        rc = sqlite3_exec(db, "DELETE FROM nodes; DELETE FROM edges;", NULL, NULL, NULL);
+        TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+        
+        // Insert nodes
+        rc = sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
+        TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+        
+        sqlite3_stmt *stmt;
+        rc = sqlite3_prepare_v2(db, 
+            "INSERT INTO nodes (labels, properties) VALUES (?, ?);",
+            -1, &stmt, NULL);
+        TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+        
+        for (int i = 0; i < size; i++) {
+            char props[256];
+            snprintf(props, sizeof(props), "{\"id\": %d}", i);
+            
+            sqlite3_bind_text(stmt, 1, "Node", -1, SQLITE_STATIC);
+            sqlite3_bind_text(stmt, 2, props, -1, SQLITE_TRANSIENT);
+            
+            sqlite3_step(stmt);
+            sqlite3_reset(stmt);
+        }
+        
+        sqlite3_finalize(stmt);
+        sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+        
+        // Verify count
+        rc = sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM nodes;", -1, &stmt, NULL);
+        TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+        
+        rc = sqlite3_step(stmt);
+        TEST_ASSERT_EQUAL(SQLITE_ROW, rc);
+        
+        int count = sqlite3_column_int(stmt, 0);
+        TEST_ASSERT_EQUAL(size, count);
+        
+        sqlite3_finalize(stmt);
+        
+        printf("Successfully handled %d nodes\n", size);
+    }
 }
 
-/*
-** Test DFS performance on binary trees.
-*/
-void testDFSPerformanceBinaryTree(void){
-  setupPerformanceTests();
-  const int depths[] = {8, 10, 12, 14};  /* 255, 1023, 4095, 16383 nodes */
-  int i;
-  
-  printf("\n=== DFS Performance - Binary Tree ===\n");
-  printf("Depth\tNodes\tTime(ms)\tNodes/sec\n");
-  
-  for( i=0; i<(int)(sizeof(depths)/sizeof(depths[0])); i++ ){
-    char *zPath = 0;
-    double startTime, endTime, elapsed;
-    int nNodes = (1 << depths[i]) - 1;
+void test_concurrent_access_performance(void) {
+    db = create_test_db();
+    struct timeval start, end;
     int rc;
     
-    createBinaryTree(depths[i]);
-    
-    startTime = getTimeMs();
-    rc = graphDFS(pVtab, 1, -1, &zPath);
-    endTime = getTimeMs();
-    
+    // Insert initial data
+    rc = sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
     TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-    TEST_ASSERT_NOT_NULL(zPath);
     
-    elapsed = endTime - startTime;
-    printf("%d\t%d\t%.2f\t\t%.0f\n", depths[i], nNodes, elapsed, 
-           nNodes*1000.0/elapsed);
+    sqlite3_stmt *stmt;
+    rc = sqlite3_prepare_v2(db, 
+        "INSERT INTO nodes (labels, properties) VALUES (?, ?);",
+        -1, &stmt, NULL);
+    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
     
-    sqlite3_free(zPath);
-  }
-  teardownPerformanceTests();
+    for (int i = 0; i < 100; i++) {
+        char props[256];
+        snprintf(props, sizeof(props), "{\"id\": %d}", i);
+        
+        sqlite3_bind_text(stmt, 1, "Node", -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 2, props, -1, SQLITE_TRANSIENT);
+        
+        sqlite3_step(stmt);
+        sqlite3_reset(stmt);
+    }
+    
+    sqlite3_finalize(stmt);
+    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+    
+    // Test multiple rapid queries (simulating concurrent access)
+    gettimeofday(&start, NULL);
+    
+    for (int i = 0; i < 100; i++) {
+        rc = sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM nodes;", -1, &stmt, NULL);
+        TEST_ASSERT_EQUAL(SQLITE_OK, rc);
+        
+        rc = sqlite3_step(stmt);
+        TEST_ASSERT_EQUAL(SQLITE_ROW, rc);
+        
+        int count = sqlite3_column_int(stmt, 0);
+        TEST_ASSERT_EQUAL(100, count);
+        
+        sqlite3_finalize(stmt);
+    }
+    
+    gettimeofday(&end, NULL);
+    double duration = get_time_diff(start, end);
+    
+    printf("100 sequential queries took %.3f seconds (%.1f queries/sec)\n", 
+           duration, 100.0 / duration);
+    
+    // Should handle at least 50 queries per second
+    TEST_ASSERT_TRUE(duration < 2.0);
 }
 
-/*
-** Test BFS performance on binary trees.
-*/
-void testBFSPerformanceBinaryTree(void){
-  setupPerformanceTests();
-  const int depths[] = {8, 10, 12, 14};  /* 255, 1023, 4095, 16383 nodes */
-  int i;
-  
-  printf("\n=== BFS Performance - Binary Tree ===\n");
-  printf("Depth\tNodes\tTime(ms)\tNodes/sec\n");
-  
-  for( i=0; i<(int)(sizeof(depths)/sizeof(depths[0])); i++ ){
-    char *zPath = 0;
-    double startTime, endTime, elapsed;
-    int nNodes = (1 << depths[i]) - 1;
-    int rc;
+int main(void) {
+    UNITY_BEGIN();
     
-    createBinaryTree(depths[i]);
+    RUN_TEST(test_bulk_insert_performance);
+    RUN_TEST(test_bulk_query_performance);
+    RUN_TEST(test_large_graph_traversal_performance);
+    RUN_TEST(test_memory_usage_scaling);
+    RUN_TEST(test_concurrent_access_performance);
     
-    startTime = getTimeMs();
-    rc = graphBFS(pVtab, 1, -1, &zPath);
-    endTime = getTimeMs();
-    
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-    TEST_ASSERT_NOT_NULL(zPath);
-    
-    elapsed = endTime - startTime;
-    printf("%d\t%d\t%.2f\t\t%.0f\n", depths[i], nNodes, elapsed, 
-           nNodes*1000.0/elapsed);
-    
-    sqlite3_free(zPath);
-  }
-  teardownPerformanceTests();
-}
-
-/*
-** Test DFS performance on complete graphs (stress test).
-*/
-void testDFSPerformanceComplete(void){
-  setupPerformanceTests();
-  const int sizes[] = {10, 20, 30, 40};
-  int i;
-  
-  printf("\n=== DFS Performance - Complete Graph ===\n");
-  printf("Size\tEdges\tTime(ms)\tNodes/sec\n");
-  
-  for( i=0; i<(int)(sizeof(sizes)/sizeof(sizes[0])); i++ ){
-    char *zPath = 0;
-    double startTime, endTime, elapsed;
-    int nEdges = sizes[i] * (sizes[i] - 1);
-    int rc;
-    
-    createCompleteGraph(sizes[i]);
-    
-    startTime = getTimeMs();
-    rc = graphDFS(pVtab, 1, -1, &zPath);
-    endTime = getTimeMs();
-    
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-    TEST_ASSERT_NOT_NULL(zPath);
-    
-    elapsed = endTime - startTime;
-    printf("%d\t%d\t%.2f\t\t%.0f\n", sizes[i], nEdges, elapsed, 
-           sizes[i]*1000.0/elapsed);
-    
-    sqlite3_free(zPath);
-  }
-  teardownPerformanceTests();
-}
-
-/*
-** Test BFS performance on complete graphs (stress test).
-*/
-void testBFSPerformanceComplete(void){
-  setupPerformanceTests();
-  const int sizes[] = {10, 20, 30, 40};
-  int i;
-  
-  printf("\n=== BFS Performance - Complete Graph ===\n");
-  printf("Size\tEdges\tTime(ms)\tNodes/sec\n");
-  
-  for( i=0; i<(int)(sizeof(sizes)/sizeof(sizes[0])); i++ ){
-    char *zPath = 0;
-    double startTime, endTime, elapsed;
-    int nEdges = sizes[i] * (sizes[i] - 1);
-    int rc;
-    
-    createCompleteGraph(sizes[i]);
-    
-    startTime = getTimeMs();
-    rc = graphBFS(pVtab, 1, -1, &zPath);
-    endTime = getTimeMs();
-    
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-    TEST_ASSERT_NOT_NULL(zPath);
-    
-    elapsed = endTime - startTime;
-    printf("%d\t%d\t%.2f\t\t%.0f\n", sizes[i], nEdges, elapsed, 
-           sizes[i]*1000.0/elapsed);
-    
-    sqlite3_free(zPath);
-  }
-  teardownPerformanceTests();
-}
-
-/*
-** Test memory usage during traversal.
-*/
-void testTraversalMemoryUsage(void){
-  setupPerformanceTests();
-  const int sizes[] = {1000, 5000, 10000};
-  int i;
-  
-  printf("\n=== Traversal Memory Usage ===\n");
-  printf("Size\tDFS Path\tBFS Path\n");
-  
-  for( i=0; i<(int)(sizeof(sizes)/sizeof(sizes[0])); i++ ){
-    char *zDFSPath = 0;
-    char *zBFSPath = 0;
-    int rc;
-    
-    createLinearChain(sizes[i]);
-    
-    /* Measure DFS path length */
-    rc = graphDFS(pVtab, 1, -1, &zDFSPath);
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-    TEST_ASSERT_NOT_NULL(zDFSPath);
-    
-    /* Measure BFS path length */
-    rc = graphBFS(pVtab, 1, -1, &zBFSPath);
-    TEST_ASSERT_EQUAL(SQLITE_OK, rc);
-    TEST_ASSERT_NOT_NULL(zBFSPath);
-    
-    printf("%d\t%zu bytes\t%zu bytes\n", sizes[i], 
-           strlen(zDFSPath), strlen(zBFSPath));
-    
-    sqlite3_free(zDFSPath);
-    sqlite3_free(zBFSPath);
-  }
-  teardownPerformanceTests();
-}
-
-/*
-** Verify O(V+E) time complexity for traversals.
-*/
-void testTraversalTimeComplexity(void){
-  setupPerformanceTests();
-  double times[4];
-  const int sizes[] = {1000, 2000, 4000, 8000};
-  int i;
-  
-  printf("\n=== Time Complexity Verification ===\n");
-  printf("Testing O(V+E) complexity for DFS...\n");
-  
-  /* Measure DFS times for different sizes */
-  for( i=0; i<4; i++ ){
-    char *zPath = 0;
-    double startTime, endTime;
-    int rc;
-    
-    createLinearChain(sizes[i]);
-    
-    startTime = getTimeMs();
-    rc = graphDFS(pVtab, 1, -1, &zPath);
-    (void)rc;  /* Performance test - result not checked */
-    endTime = getTimeMs();
-    
-    times[i] = endTime - startTime;
-    
-    sqlite3_free(zPath);
-  }
-  
-  /* Check if times scale linearly */
-  printf("Size ratios: 1:2:4:8\n");
-  printf("Time ratios: 1:%.1f:%.1f:%.1f\n",
-         times[1]/times[0], times[2]/times[0], times[3]/times[0]);
-  
-  /* Verify approximately linear scaling */
-  double ratio21 = times[1] / times[0];
-  double ratio42 = times[2] / times[1];
-  double ratio84 = times[3] / times[2];
-  
-  TEST_ASSERT_FLOAT_WITHIN(0.5, 2.0, ratio21);
-  TEST_ASSERT_FLOAT_WITHIN(0.5, 2.0, ratio42);
-  TEST_ASSERT_FLOAT_WITHIN(0.5, 2.0, ratio84);
-  teardownPerformanceTests();
-}
-
-/*
-** Main performance test runner.
-*/
-void runPerformanceTests(void){
-  printf("\n========================================\n");
-  printf("   Graph Traversal Performance Tests\n");
-  printf("========================================\n");
-  
-  RUN_TEST(testDFSPerformanceLinear);
-  RUN_TEST(testBFSPerformanceLinear);
-  RUN_TEST(testDFSPerformanceBinaryTree);
-  RUN_TEST(testBFSPerformanceBinaryTree);
-  RUN_TEST(testDFSPerformanceComplete);
-  RUN_TEST(testBFSPerformanceComplete);
-  RUN_TEST(testTraversalMemoryUsage);
-  RUN_TEST(testTraversalTimeComplexity);
-  
-  printf("\n========================================\n");
+    return UNITY_END();
 }

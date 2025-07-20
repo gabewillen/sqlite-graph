@@ -200,6 +200,7 @@ int cypherExecutorExecute(CypherExecutor *pExecutor, char **pzResults) {
       char *zNew = sqlite3_realloc(zResultArray, nAllocated);
       if( !zNew ) {
         sqlite3_free(zRowJson);
+        sqlite3_free(zResultArray);
         rc = SQLITE_NOMEM;
         break;
       }
@@ -214,6 +215,7 @@ int cypherExecutorExecute(CypherExecutor *pExecutor, char **pzResults) {
     nUsed += nRowLen;
     
     sqlite3_free(zRowJson);
+        sqlite3_free(zResultArray);
     nResults++;
     
     /* Sanity check to prevent infinite loops */

@@ -11,7 +11,7 @@ BUILD_DIR = ../build
 OBJ_DIR = $(BUILD_DIR)/obj/src
 
 # Source files - include all C files except problematic ones  
-SRCS = $(filter-out cypher/cypher-sql.c graph-vtab-hardened.c, $(wildcard *.c) $(wildcard cypher/*.c))
+SRCS = $(filter-out cypher/cypher-sql.c, $(wildcard *.c) $(wildcard cypher/*.c))
 # Add the fixed cypher SQL functions
 SRCS += cypher/cypher-sql-fixed.c
 SRCS += graph-vtab.c
